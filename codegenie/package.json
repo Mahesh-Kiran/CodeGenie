@@ -41,20 +41,16 @@
                 "title": "CodeGenie: Generate Code"
             },
             {
+                "command": "codegenie.generateFromComment",
+                "title": "CodeGenie: Generate from Last Comment"
+            },
+            {
                 "command": "codegenie.enableAutocomplete",
                 "title": "CodeGenie: Enable Autocomplete"
             },
             {
                 "command": "codegenie.disableAutocomplete",
                 "title": "CodeGenie: Disable Autocomplete"
-            },
-            {
-                "command": "codegenie.openPanel",
-                "title": "CodeGenie: Open AI Panel"
-            },
-            {
-                "command": "codegenie.generateFromDelimitedPrompt",
-                "title": "CodeGenie: Generate From Delimited Prompt"
             }
         ]
     },

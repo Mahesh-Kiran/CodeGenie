@@ -1,7 +1,10 @@
+import React from "react";
+import ChatBox from "./ChatBox";
+
 function App() {
   return (
     <div>
-      <h1>CodeGenie UI is Working!</h1>
+      <ChatBox />
     </div>
   );
 }

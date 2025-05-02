@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import axios from "axios";
+import { fetchAICompletion } from "./api";
 import "./styles.css";
 import { IoSendOutline, IoAddCircleOutline } from 'react-icons/io5';
 import { HiDesktopComputer } from 'react-icons/hi';
@@ -18,22 +18,33 @@ const ChatBox = () => {
   const renderMessage = (msg: { text: string; sender: string }) => {
     if (msg.sender === "bot") {
       const { explanation, code } = extractCodeAndExplanation(msg.text);
-  
+
       return (
         <div className="bot-message">
           {explanation && <p>{explanation}</p>}
+
           {code && (
-            <SyntaxHighlighter language="tsx" style={darcula}>
-              {code}
-            </SyntaxHighlighter>
+            <div className="code-block">
+              <SyntaxHighlighter language="tsx" style={darcula}>
+                {code}
+              </SyntaxHighlighter>
+              <div className="code-actions">
+                <button onClick={() => navigator.clipboard.writeText(code)}>📋 Copy</button>
+                <button onClick={() => {
+                  const vscode = (window as any).acquireVsCodeApi?.();
+                  if (vscode) {
+                    vscode.postMessage({ type: "insertCode", code });
+                  }
+                }}>📥 Insert</button>
+              </div>
+            </div>
           )}
         </div>
       );
     }
-  
+
     return <pre className="user-message">{msg.text}</pre>;
   };
-  
 
 
   const scrollToBottom = () => {
@@ -79,21 +90,17 @@ const ChatBox = () => {
       const API_URL = isOnline
         ? "http://<rtx-4050-server-ip>:8000/generate"
         : "http://127.0.0.1:8000/generate";
-
-      const response = await axios.post(API_URL, {
-        prompt,
-        max_tokens: 50000
-      });
-
-      if (!response.data?.response) throw new Error("Empty response");
-
-      const aiResponse = extractOnlyCode(response.data.response);
-      setMessages(prev => [...prev, { text: aiResponse, sender: "bot" }]);
+      const aiResponse = await fetchAICompletion(prompt, API_URL, 1000);
+      const code = extractOnlyCode(aiResponse);
+      setMessages(prev => [...prev, { text: code, sender: "bot" }]);
     } catch (error) {
       console.error("API Error:", error);
       setMessages(prev => [
         ...prev,
-        { text: "❌ Error: Failed to get response from AI backend", sender: "bot" }
+        { 
+          text: "❌ Error: Failed to get response from AI backend. Please check your connection.", 
+          sender: "bot" 
+        }
       ]);
     }
     setIsTyping(false);
@@ -104,17 +111,17 @@ const ChatBox = () => {
     const match = response.match(codeRegex);
     return match ? match[1].trim() : response.trim();
   }
-  
+
   function extractCodeAndExplanation(text: string): { explanation: string; code: string } {
     const codeRegex = /```(?:[\w]*)?\n?([\s\S]*?)```/;
     const match = text.match(codeRegex);
     const code = match ? match[1].trim() : "";
-  
+
     const explanation = match ? text.replace(match[0], "").trim() : text.trim();
-  
+
     return { explanation, code };
   }
-  
+
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -124,7 +131,6 @@ const ChatBox = () => {
 
     reader.onload = async () => {
       const fileContent = reader.result as string;
-
       setMessages(prev => [
         ...prev,
         { text: `📎 Attached: ${file.name}\n`, sender: "user" }
@@ -135,12 +141,12 @@ const ChatBox = () => {
           ? "http://<rtx-4050-server-ip>:8000/generate"
           : "http://127.0.0.1:8000/generate";
 
-        const response = await axios.post(API_URL, {
-          prompt: `User uploaded file: ${file.name}\n\n${fileContent}`,
-          max_tokens: 50000
-        });
-
-        const aiResponse = extractOnlyCode(response.data.response);
+        // Use centralized API function
+        const aiResponse = await fetchAICompletion(
+          `User uploaded file: ${file.name}\n\n${fileContent}`,
+          API_URL,
+          1000
+        );
         setMessages(prev => [...prev, { text: aiResponse, sender: "bot" }]);
       } catch (err) {
         console.error("AI File Upload Error:", err);

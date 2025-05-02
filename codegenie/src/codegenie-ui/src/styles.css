@@ -81,6 +81,28 @@
 }
 
 
+.code-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.code-actions button {
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+  color: #eee;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.code-actions button:hover {
+  background-color: #444;
+}
+
+
 .chatbox-input-area {
   display: flex;
   align-items: center;

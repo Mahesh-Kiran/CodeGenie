@@ -1,11 +1,11 @@
 import * as vscode from 'vscode';
-import axios from "axios";
 import { CodeGenieViewProvider } from "./CodeGenieViewProvider";
+import { fetchAICompletion } from "./codegenie-ui/src/api";
 
+const API_URL = "http://127.0.0.1:8000/generate";
 let EXTENSION_STATUS = true;
 let statusBarItem: vscode.StatusBarItem;
 let provider: CodeGenieViewProvider;
-let lastEnterPressTime: number = 0;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log("✅ CodeGenie Extension Activated!");
@@ -19,15 +19,97 @@ export function activate(context: vscode.ExtensionContext) {
     updateStatusBar();
     statusBarItem.show();
 
+    function removeQueryFromResponse(response: string, query: string): string {
+        const trimmedQuery = query.trim();
+        let cleaned = response.trim();
+
+        if (cleaned.startsWith(trimmedQuery)) {
+            cleaned = cleaned.slice(trimmedQuery.length).trimStart();
+            if (cleaned.startsWith('\n')) {
+                cleaned = cleaned.slice(1);
+            }
+        }
+        return cleaned;
+    }
+
+    function extractOnlyCode(response: string): string {
+        const match = response.match(/``````/);
+        if (match) return match[1].trim();
+        return response
+            .split("\n")
+            .filter(line => {
+                const trimmed = line.trim();
+                return (
+                    trimmed &&
+                    !trimmed.startsWith("//") &&
+                    !trimmed.startsWith("*") &&
+                    !/^(Note|This|Explanation|To solve|In this|Please|The)/i.test(trimmed)
+                );
+            })
+            .join("\n")
+            .trim();
+    }
+    
+
+    async function generateCodeFromPrompt(editor: vscode.TextEditor, prompt: string) {
+        vscode.window.showInformationMessage("✨ Generating Code...");
+        statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
+
+        try {
+            const rawResponse = await fetchAICompletion(prompt, API_URL, 1000);
+            const cleanedResponse = removeQueryFromResponse(rawResponse, prompt);
+            const aiResponse = extractOnlyCode(cleanedResponse);
+
+            if (!aiResponse) {
+                vscode.window.showErrorMessage("No code generated.");
+                statusBarItem.text = "$(alert) CodeGenie: No response";
+                return;
+            }
+
+            editor.edit(editBuilder => {
+                editBuilder.insert(editor.selection.active, `\n${aiResponse.trim()}\n`);
+            });
+
+            // Send full explanation + code to Webview
+            if (provider && provider._view) {
+                provider._view.webview.postMessage({
+                    type: "aiResponse",
+                    content: rawResponse
+                });
+            }
+
+            vscode.window.showInformationMessage("✅ Code inserted!");
+            updateStatusBar();
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error generating code: ${error}`);
+            statusBarItem.text = "$(error) CodeGenie: Error";
+        }
+    }
+
+    function findLastComment(document: vscode.TextDocument): string | null {
+        for (let i = document.lineCount - 1; i >= 0; i--) {
+            const text = document.lineAt(i).text.trim();
+            if (text.startsWith("//") || text.startsWith("#")) {
+                return text.replace(/^[/#]+/, "").trim();
+            }
+        }
+        return null;
+    }
+
+    function updateStatusBar() {
+        statusBarItem.text = EXTENSION_STATUS ? "$(check) CodeGenie: Ready" : "$(x) CodeGenie: Disabled";
+    }
+
+    // Commands
     let generateCode = vscode.commands.registerCommand('codegenie.getCode', async () => {
         if (!EXTENSION_STATUS) {
-            vscode.window.showErrorMessage("❌ Autocomplete is disabled.");
+            vscode.window.showErrorMessage("Autocomplete is disabled.");
             return;
         }
 
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showErrorMessage('❌ Open a file to use CodeGenie.');
+            vscode.window.showErrorMessage('Open a file to use CodeGenie.');
             return;
         }
 
@@ -37,104 +119,25 @@ export function activate(context: vscode.ExtensionContext) {
         await generateCodeFromPrompt(editor, prompt);
     });
 
-    let generateFromDelimitedPrompt = vscode.commands.registerCommand('codegenie.generateFromDelimitedPrompt', async () => {
+    let generateFromComment = vscode.commands.registerCommand('codegenie.generateFromComment', async () => {
+        if (!EXTENSION_STATUS) {
+            vscode.window.showErrorMessage("Autocomplete is disabled.");
+            return;
+        }
+
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
-            vscode.window.showErrorMessage('❌ Open a file to use CodeGenie.');
+            vscode.window.showErrorMessage('Open a file to use CodeGenie.');
             return;
         }
 
         const document = editor.document;
-        const fullText = document.getText();
-
-        const startTag = "//<<GENIE_PROMPT_START>>";
-        const endTag = "//<<GENIE_PROMPT_END>>";
-
-        const startIndex = fullText.indexOf(startTag);
-        const endIndex = fullText.indexOf(endTag);
-
-        if (startIndex === -1 || endIndex === -1 || endIndex < startIndex) {
-            vscode.window.showErrorMessage("❌ Prompt block not found with delimiters.");
+        const lastComment = findLastComment(document);
+        if (!lastComment) {
+            vscode.window.showErrorMessage("No comment found.");
             return;
         }
-
-        const startPos = document.positionAt(startIndex);
-        const endPos = document.positionAt(endIndex + endTag.length);
-        const range = new vscode.Range(startPos, endPos);
-
-        const promptBlock = document.getText(range);
-        const promptOnly = promptBlock
-            .split('\n')
-            .filter(line => !line.includes(startTag) && !line.includes(endTag))
-            .join('\n')
-            .trim();
-
-        try {
-            statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
-            const rawResponse = await fetchAICompletionRaw(promptOnly);
-            const aiResponse = extractOnlyCode(rawResponse);
-
-            if (!aiResponse) {
-                vscode.window.showErrorMessage("❌ AI did not return any code.");
-                statusBarItem.text = "$(alert) CodeGenie: No response";
-                return;
-            }
-
-            await editor.edit(editBuilder => {
-                editBuilder.replace(range, aiResponse);
-            });
-
-            vscode.window.showInformationMessage("✅ Replaced prompt block with generated code.");
-            statusBarItem.text = "$(check) CodeGenie: Ready";
-        } catch (error) {
-            vscode.window.showErrorMessage("❌ Error generating code from block.");
-            statusBarItem.text = "$(error) CodeGenie: Error";
-        }
-    });
-
-    context.subscriptions.push(generateCode, generateFromDelimitedPrompt);
-
-    vscode.workspace.onDidChangeTextDocument((event) => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor || !EXTENSION_STATUS) return;
-
-        const document = editor.document;
-        const currentTime = Date.now();
-        const timeDiff = currentTime - lastEnterPressTime;
-
-        if (event.contentChanges.length > 0 && event.contentChanges[0].text === '\n') {
-            if (timeDiff < 500) {
-                lastEnterPressTime = 0;
-
-                const fullText = document.getText();
-                const startTag = "//<<GENIE_PROMPT_START>>";
-                const endTag = "//<<GENIE_PROMPT_END>>";
-
-                const startIndex = fullText.indexOf(startTag);
-                const endIndex = fullText.indexOf(endTag);
-
-                if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
-                    const startPos = document.positionAt(startIndex);
-                    const endPos = document.positionAt(endIndex + endTag.length);
-                    const range = new vscode.Range(startPos, endPos);
-
-                    const promptBlock = document.getText(range);
-                    const promptOnly = promptBlock
-                        .split('\n')
-                        .filter(line => !line.includes(startTag) && !line.includes(endTag))
-                        .join('\n')
-                        .trim();
-
-                    generateCodeFromPrompt(editor, promptOnly).then(() => {
-                        editor.edit(editBuilder => {
-                            editBuilder.replace(range, extractOnlyCode(promptOnly));
-                        });
-                    });
-                }
-            } else {
-                lastEnterPressTime = currentTime;
-            }
-        }
+        await generateCodeFromPrompt(editor, lastComment);
     });
 
     let enableAutocomplete = vscode.commands.registerCommand('codegenie.enableAutocomplete', () => {
@@ -145,14 +148,19 @@ export function activate(context: vscode.ExtensionContext) {
 
     let disableAutocomplete = vscode.commands.registerCommand('codegenie.disableAutocomplete', () => {
         EXTENSION_STATUS = false;
-        vscode.window.showWarningMessage("🛑 CodeGenie Autocomplete Disabled");
+        vscode.window.showWarningMessage("CodeGenie Autocomplete Disabled");
         updateStatusBar();
     });
 
-    context.subscriptions.push(enableAutocomplete, disableAutocomplete);
+    context.subscriptions.push(generateCode, generateFromComment, enableAutocomplete, disableAutocomplete);
 
     const inlineProvider: vscode.InlineCompletionItemProvider = {
-        provideInlineCompletionItems: async (document, position) => {
+        provideInlineCompletionItems: async (
+            document: vscode.TextDocument,
+            position: vscode.Position,
+            context: vscode.InlineCompletionContext,
+            token: vscode.CancellationToken
+        ): Promise<vscode.InlineCompletionItem[]> => {
             if (!EXTENSION_STATUS) return [];
 
             let textBeforeCursor = document.getText(new vscode.Range(position.with(undefined, 0), position)).trim();
@@ -172,7 +180,8 @@ export function activate(context: vscode.ExtensionContext) {
                 console.log("🔵 Autocomplete for:", textBeforeCursor);
                 statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
 
-                let aiResponse = await fetchAICompletionRaw(textBeforeCursor);
+                let rawResponse = await fetchAICompletion(textBeforeCursor, API_URL, 1000);
+                let aiResponse = removeQueryFromResponse(rawResponse, textBeforeCursor); 
                 if (!aiResponse || aiResponse.trim() === "") {
                     statusBarItem.text = "$(alert) CodeGenie: No response";
                     return [];
@@ -187,89 +196,15 @@ export function activate(context: vscode.ExtensionContext) {
                     )
                 ];
             } catch (error) {
-                console.error("❌ Autocomplete Error:", error);
+                console.error("Autocomplete Error:", error);
                 statusBarItem.text = "$(error) CodeGenie: Error";
                 return [];
             }
         }
     };
 
-    vscode.languages.registerInlineCompletionItemProvider({ pattern: "" }, inlineProvider);
-}
+    vscode.languages.registerInlineCompletionItemProvider({ pattern: "**" }, inlineProvider);
 
-async function generateCodeFromPrompt(editor: vscode.TextEditor, prompt: string) {
-    vscode.window.showInformationMessage("✨ Generating Code...");
-    statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
-
-    try {
-        const rawResponse = await fetchAICompletionRaw(prompt);
-        const aiResponse = extractOnlyCode(rawResponse);
-
-        if (!aiResponse) {
-            vscode.window.showErrorMessage("❌ No code generated.");
-            statusBarItem.text = "$(alert) CodeGenie: No response";
-            return;
-        }
-
-        editor.edit(editBuilder => {
-            editBuilder.insert(editor.selection.active, `\n${aiResponse.trim()}\n`);
-        });
-
-        if (provider && provider._view) {
-            provider._view.webview.postMessage({
-                type: "aiResponse",
-                content: rawResponse
-            });
-        }
-
-        vscode.window.showInformationMessage("✅ Code inserted!");
-        updateStatusBar();
-    } catch (error) {
-        vscode.window.showErrorMessage("❌ Error generating code.");
-        statusBarItem.text = "$(error) CodeGenie: Error";
-    }
-}
-
-async function fetchAICompletionRaw(prompt: string): Promise<string> {
-    try {
-        const response = await axios.post("http://127.0.0.1:8000/generate", {
-            prompt,
-            max_tokens: 500
-        });
-
-        let aiResponse = response.data.response || "";
-        if (aiResponse.startsWith(prompt)) {
-            aiResponse = aiResponse.replace(prompt, "").trim();
-        }
-        return aiResponse;
-    } catch (error) {
-        console.error("❌ Fetch Error:", error);
-        return "";
-    }
-}
-
-function extractOnlyCode(response: string): string {
-    const match = response.match(/(?:\w+)?\s*([\s\S]*?)\s*/);
-    if (match) return match[1].trim();
-
-    return response
-        .split("\n")
-        .filter(line => {
-            const trimmed = line.trim();
-            return (
-                trimmed &&
-                !trimmed.startsWith("//") &&
-                !trimmed.startsWith("#") &&
-                !trimmed.startsWith("*") &&
-                !/^(Note|This|Explanation|To solve|In this)/i.test(trimmed)
-            );
-        })
-        .join("\n")
-        .trim();
-}
-
-function updateStatusBar() {
-    statusBarItem.text = EXTENSION_STATUS ? "$(check) CodeGenie: Ready" : "$(x) CodeGenie: Disabled";
 }
 
 export function deactivate() {
