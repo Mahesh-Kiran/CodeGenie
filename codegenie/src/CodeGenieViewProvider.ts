@@ -55,5 +55,19 @@ export class CodeGenieViewProvider implements vscode.WebviewViewProvider {
       console.error("❌ Failed to load Webview:", error);
       webviewView.webview.html = `<h1>Error loading UI</h1><p>${error.message}</p>`;
     }
+
+    webviewView.webview.onDidReceiveMessage(async (message) => {
+      if (message.type === "insertCode") {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+          vscode.window.showErrorMessage("No active editor to insert code.");
+          return;
+        }
+        await editor.edit(editBuilder => {
+          editBuilder.insert(editor.selection.active, message.code);
+        });
+        vscode.window.showInformationMessage("✅ Code inserted from CodeGenie!");
+      }
+    });
   }
 }

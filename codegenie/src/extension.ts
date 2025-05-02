@@ -33,23 +33,36 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     function extractOnlyCode(response: string): string {
-        const match = response.match(/``````/);
-        if (match) return match[1].trim();
-        return response
-            .split("\n")
-            .filter(line => {
-                const trimmed = line.trim();
-                return (
-                    trimmed &&
-                    !trimmed.startsWith("//") &&
-                    !trimmed.startsWith("*") &&
-                    !/^(Note|This|Explanation|To solve|In this|Please|The)/i.test(trimmed)
-                );
-            })
-            .join("\n")
+        let cleaned = response
+            .split('\n')
+            .map(line => line.trim())
+            .filter(line => line !== '.' && line !== '')
+            .join('\n')
+            .trim();
+
+        const codeBlocks = [];
+        const codeBlockRegex = /``````/g;
+        let match;
+        while ((match = codeBlockRegex.exec(cleaned)) !== null) {
+            codeBlocks.push(match[1].trim());
+        }
+
+        if (codeBlocks.length > 0) {
+            return codeBlocks.join('\n\n');
+        }
+
+        return cleaned
+            .split('\n')
+            .filter(line =>
+                line &&
+                !line.startsWith('#') &&
+                !line.startsWith('//') &&
+                !/^(Note|This|Explanation|For example|A more efficient solution|Here is|In this|To solve)/i.test(line)
+            )
+            .join('\n')
             .trim();
     }
-    
+
 
     async function generateCodeFromPrompt(editor: vscode.TextEditor, prompt: string) {
         vscode.window.showInformationMessage("✨ Generating Code...");
@@ -59,6 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
             const rawResponse = await fetchAICompletion(prompt, API_URL, 1000);
             const cleanedResponse = removeQueryFromResponse(rawResponse, prompt);
             const aiResponse = extractOnlyCode(cleanedResponse);
+
 
             if (!aiResponse) {
                 vscode.window.showErrorMessage("No code generated.");
@@ -181,7 +195,7 @@ export function activate(context: vscode.ExtensionContext) {
                 statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
 
                 let rawResponse = await fetchAICompletion(textBeforeCursor, API_URL, 1000);
-                let aiResponse = removeQueryFromResponse(rawResponse, textBeforeCursor); 
+                let aiResponse = removeQueryFromResponse(rawResponse, textBeforeCursor);
                 if (!aiResponse || aiResponse.trim() === "") {
                     statusBarItem.text = "$(alert) CodeGenie: No response";
                     return [];

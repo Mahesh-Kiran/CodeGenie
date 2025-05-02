@@ -15,17 +15,33 @@ const ChatBox = () => {
   const chatRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  function extractCodeBlocks(text: string) {
+    const codeRegex = /```(?:[\w]*)?\n([\s\S]*?)```/g;
+    let match;
+    const codeBlocks = [];
+    while ((match = codeRegex.exec(text)) !== null) {
+      codeBlocks.push(match[1].trim());
+    }
+    return codeBlocks;
+  }
+  
+  function removeCodeBlocks(text: string) {
+    return text.replace(/```(?:[\w]*)?\n[\s\S]*?```/g, "").trim();
+  }
+  
   const renderMessage = (msg: { text: string; sender: string }) => {
     if (msg.sender === "bot") {
-      const { explanation, code } = extractCodeAndExplanation(msg.text);
+      const codeBlocks = extractCodeBlocks(msg.text);
+      const displayText = removeCodeBlocks(msg.text);
 
       return (
         <div className="bot-message">
-          {explanation && <p>{explanation}</p>}
-
-          {code && (
-            <div className="code-block">
-              <SyntaxHighlighter language="tsx" style={darcula}>
+          {displayText && <pre>{displayText}</pre>}
+          {codeBlocks.map((code, idx) => (
+            <div className="code-block" key={idx}>
+              <SyntaxHighlighter language="tsx" style={darcula} wrapLongLines={true}
+  customStyle={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
                 {code}
               </SyntaxHighlighter>
               <div className="code-actions">
@@ -38,14 +54,12 @@ const ChatBox = () => {
                 }}>📥 Insert</button>
               </div>
             </div>
-          )}
+          ))}
         </div>
       );
     }
-
     return <pre className="user-message">{msg.text}</pre>;
   };
-
 
   const scrollToBottom = () => {
     if (chatRef.current) {
@@ -67,7 +81,6 @@ const ChatBox = () => {
       const scrollHeight = textarea.scrollHeight;
       const maxHeight = 120;
       const minHeight = 40;
-
       if (scrollHeight > minHeight) {
         textarea.style.height = Math.min(scrollHeight, maxHeight) + "px";
         textarea.style.overflowY = scrollHeight > maxHeight ? "auto" : "hidden";
@@ -80,19 +93,16 @@ const ChatBox = () => {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-
     const prompt = input.trim();
     setMessages(prev => [...prev, { text: prompt, sender: "user" }]);
     setInput("");
     setIsTyping(true);
-
     try {
       const API_URL = isOnline
         ? "http://<rtx-4050-server-ip>:8000/generate"
         : "http://127.0.0.1:8000/generate";
       const aiResponse = await fetchAICompletion(prompt, API_URL, 1000);
-      const code = extractOnlyCode(aiResponse);
-      setMessages(prev => [...prev, { text: code, sender: "bot" }]);
+      setMessages(prev => [...prev, { text: aiResponse, sender: "bot" }]);
     } catch (error) {
       console.error("API Error:", error);
       setMessages(prev => [
@@ -106,42 +116,20 @@ const ChatBox = () => {
     setIsTyping(false);
   };
 
-  function extractOnlyCode(response: string): string {
-    const codeRegex = /```(?:[\w]*)?\n?([\s\S]*?)```/;
-    const match = response.match(codeRegex);
-    return match ? match[1].trim() : response.trim();
-  }
-
-  function extractCodeAndExplanation(text: string): { explanation: string; code: string } {
-    const codeRegex = /```(?:[\w]*)?\n?([\s\S]*?)```/;
-    const match = text.match(codeRegex);
-    const code = match ? match[1].trim() : "";
-
-    const explanation = match ? text.replace(match[0], "").trim() : text.trim();
-
-    return { explanation, code };
-  }
-
-
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
-
     reader.onload = async () => {
       const fileContent = reader.result as string;
       setMessages(prev => [
         ...prev,
         { text: `📎 Attached: ${file.name}\n`, sender: "user" }
       ]);
-
       try {
         const API_URL = isOnline
           ? "http://<rtx-4050-server-ip>:8000/generate"
           : "http://127.0.0.1:8000/generate";
-
-        // Use centralized API function
         const aiResponse = await fetchAICompletion(
           `User uploaded file: ${file.name}\n\n${fileContent}`,
           API_URL,
@@ -152,7 +140,6 @@ const ChatBox = () => {
         console.error("AI File Upload Error:", err);
       }
     };
-
     reader.readAsText(file);
   };
 
@@ -164,15 +151,12 @@ const ChatBox = () => {
             {renderMessage(msg)}
           </div>
         ))}
-
         {isTyping && <div className="typing-indicator">CodeGenie is typing...</div>}
       </div>
-
       <div className="chatbox-input-area">
         <button className="action-button" onClick={() => fileInputRef.current?.click()}>
           <IoAddCircleOutline size={20} />
         </button>
-
         <button
           className="action-button"
           onClick={() => setIsOnline(prev => !prev)}
@@ -180,7 +164,6 @@ const ChatBox = () => {
         >
           {isOnline ? <BsPciCard size={20} /> : <HiDesktopComputer size={20} />}
         </button>
-
         <textarea
           ref={textareaRef}
           className="chatbox-input"
@@ -194,14 +177,12 @@ const ChatBox = () => {
             }
           }}
         />
-
         <input
           type="file"
           ref={fileInputRef}
           style={{ display: "none" }}
           onChange={handleFileUpload}
         />
-
         <button className="send-button" onClick={sendMessage}>
           <IoSendOutline size={20} />
         </button>
