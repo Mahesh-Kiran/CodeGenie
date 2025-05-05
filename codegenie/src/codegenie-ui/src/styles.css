@@ -21,7 +21,9 @@
 .message-bubble {
   padding: 12px 16px;
   border-radius: 12px;
-  max-width: 75%;
+  max-width: 100%; 
+  width: fit-content;
+  min-width: 0;
   line-height: 1.5;
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -72,12 +74,73 @@
 .bot-message p {
   margin: 0 0 0.5rem;
   line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
+
 
 .user-message {
   padding: 0.5rem;
   border-radius: 5px;
   white-space: pre-wrap;
+}
+
+
+.code-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.code-block pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.bot-message,
+.message-bubble {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.code-block {
+  background-color: #2d2d2d;
+  padding: 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  white-space: pre-wrap;
+  margin-top: 0.5rem;
+  font-size: 14px;
+  line-height: 1.5;
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
+
+
+.code-actions button {
+  background-color: #2d2d2d;
+  border: 1px solid #444;
+  color: #eee;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: 0.2s;
+}
+
+.code-actions button:hover {
+  background-color: #444;
 }
 
 
