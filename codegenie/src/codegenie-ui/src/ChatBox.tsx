@@ -4,6 +4,8 @@ import "./styles.css";
 import { IoSendOutline, IoAddCircleOutline } from 'react-icons/io5';
 import { HiDesktopComputer } from 'react-icons/hi';
 import { BsPciCard } from 'react-icons/bs';
+import { MdCopyAll } from "react-icons/md";
+import { MdSimCardDownload } from "react-icons/md";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -45,13 +47,14 @@ const ChatBox = () => {
                 {code}
               </SyntaxHighlighter>
               <div className="code-actions">
-                <button onClick={() => navigator.clipboard.writeText(code)}>📋 Copy</button>
+                <button onClick={() => navigator.clipboard.writeText(code)}>
+                  <MdCopyAll />Copy</button>
                 <button onClick={() => {
                   const vscode = (window as any).acquireVsCodeApi?.();
                   if (vscode) {
                     vscode.postMessage({ type: "insertCode", code });
                   }
-                }}>📥 Insert</button>
+                }}><MdSimCardDownload /> Insert</button>
               </div>
             </div>
           ))}
