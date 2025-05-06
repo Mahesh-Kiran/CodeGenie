@@ -4,6 +4,7 @@ import { fetchAICompletion } from "./codegenie-ui/src/api";
 
 const API_URL = "http://127.0.0.1:8000/generate";
 let EXTENSION_STATUS = true;
+let inlineSuggestionRequested = false;
 let statusBarItem: vscode.StatusBarItem;
 let provider: CodeGenieViewProvider;
 
@@ -166,7 +167,11 @@ export function activate(context: vscode.ExtensionContext) {
         updateStatusBar();
     });
 
-    context.subscriptions.push(generateCode, generateFromComment, enableAutocomplete, disableAutocomplete);
+    let triggerInlineCompletion = vscode.commands.registerCommand('codegenie.triggerInlineCompletion', async () => {
+        inlineSuggestionRequested = true;
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
+    });
+    context.subscriptions.push(generateCode, generateFromComment,triggerInlineCompletion, enableAutocomplete, disableAutocomplete);
 
     const inlineProvider: vscode.InlineCompletionItemProvider = {
         provideInlineCompletionItems: async (
@@ -176,6 +181,8 @@ export function activate(context: vscode.ExtensionContext) {
             token: vscode.CancellationToken
         ): Promise<vscode.InlineCompletionItem[]> => {
             if (!EXTENSION_STATUS) return [];
+            if (!inlineSuggestionRequested) return [];
+            inlineSuggestionRequested = false; 
 
             let textBeforeCursor = document.getText(new vscode.Range(position.with(undefined, 0), position)).trim();
             if (!textBeforeCursor) {

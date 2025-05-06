@@ -4,6 +4,8 @@ import "./styles.css";
 import { IoSendOutline, IoAddCircleOutline } from 'react-icons/io5';
 import { HiDesktopComputer } from 'react-icons/hi';
 import { BsPciCard } from 'react-icons/bs';
+import { BsCopy } from "react-icons/bs";
+import { LuFileCode2 } from "react-icons/lu";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
@@ -45,13 +47,13 @@ const ChatBox = () => {
                 {code}
               </SyntaxHighlighter>
               <div className="code-actions">
-                <button onClick={() => navigator.clipboard.writeText(code)}>📋 Copy</button>
+                <button onClick={() => navigator.clipboard.writeText(code)}><BsCopy size={15} /></button>
                 <button onClick={() => {
                   const vscode = (window as any).acquireVsCodeApi?.();
                   if (vscode) {
                     vscode.postMessage({ type: "insertCode", code });
                   }
-                }}>📥 Insert</button>
+                }}><LuFileCode2 size={15} /></button>
               </div>
             </div>
           ))}
@@ -154,7 +156,7 @@ const ChatBox = () => {
         {isTyping && <div className="typing-indicator">CodeGenie is typing...</div>}
       </div>
       <div className="chatbox-input-area">
-        <button className="action-button" onClick={() => fileInputRef.current?.click()}>
+        <button className="action-button" onClick={() => fileInputRef.current?.click()} title="Attachments">
           <IoAddCircleOutline size={20} />
         </button>
         <button

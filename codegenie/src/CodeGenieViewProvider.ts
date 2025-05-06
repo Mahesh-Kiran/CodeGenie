@@ -66,8 +66,15 @@ export class CodeGenieViewProvider implements vscode.WebviewViewProvider {
         await editor.edit(editBuilder => {
           editBuilder.insert(editor.selection.active, message.code);
         });
-        vscode.window.showInformationMessage("✅ Code inserted from CodeGenie!");
+    
+        const pos = editor.selection.active;
+        const newPos = pos.with(pos.line + message.code.split('\n').length - 1, 
+                                message.code.split('\n').slice(-1)[0].length);
+        editor.selection = new vscode.Selection(newPos, newPos);
+    
+        vscode.window.showInformationMessage("Code inserted from CodeGenie!");
       }
     });
+    
   }
 }

@@ -45,12 +45,23 @@
                 "title": "CodeGenie: Generate from Last Comment"
             },
             {
+                "command": "codegenie.triggerInlineCompletion",
+                "title": "CodeGenie: Trigger Inline Completion"
+            },
+            {
                 "command": "codegenie.enableAutocomplete",
                 "title": "CodeGenie: Enable Autocomplete"
             },
             {
                 "command": "codegenie.disableAutocomplete",
                 "title": "CodeGenie: Disable Autocomplete"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "codegenie.triggerInlineCompletion",
+                "key": "ctrl+alt+g",
+                "when": "editorTextFocus"
             }
         ]
     },

@@ -1,3 +1,4 @@
+/* Container for the entire chatbox */
 .chatbox-container {
   height: 100vh;
   display: flex;
@@ -7,30 +8,34 @@
   font-family: 'Segoe UI', sans-serif;
   padding: 12px;
   box-sizing: border-box;
+  overflow: hidden; /* Prevent container from being scrollable */
 }
 
+/* Chat history section that is not scrollable anymore */
 .chatbox-history {
   flex: 1;
-  overflow-y: auto;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: calc(100vh - 160px); /* Ensure space for input and padding */
 }
 
+/* Individual message bubbles */
 .message-bubble {
   padding: 12px 16px;
   border-radius: 12px;
-  max-width: 100%; 
+  max-width: 100%;
   width: fit-content;
   min-width: 0;
   line-height: 1.5;
   word-wrap: break-word;
   white-space: pre-wrap;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   animation: fadeIn 0.3s ease-in-out;
 }
 
+/* User's message style */
 .user-bubble {
   align-self: flex-end;
   background: rgba(82, 113, 255, 0.2);
@@ -38,6 +43,7 @@
   color: #dbe0ff;
 }
 
+/* Bot's message style */
 .bot-bubble {
   align-self: flex-start;
   background: rgba(255, 255, 255, 0.05);
@@ -45,6 +51,7 @@
   color: #dcdcdc;
 }
 
+/* Typing indicator animation */
 .typing-indicator {
   font-style: italic;
   color: #888;
@@ -52,25 +59,36 @@
   animation: blink 1s steps(2, start) infinite;
 }
 
+/* Button animations */
 .action-button {
   transition: background-color 0.2s ease-in-out, transform 0.2s ease;
 }
+
 .action-button:hover {
   transform: scale(1.05);
 }
 
-
+/* Blink animation for the typing indicator */
 @keyframes blink {
   50% {
     opacity: 0.3;
   }
 }
 
+/* Fade-in animation for message bubbles */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
+/* Bot message paragraph styling */
 .bot-message p {
   margin: 0 0 0.5rem;
   line-height: 1.5;
@@ -79,14 +97,14 @@
   word-break: break-word;
 }
 
-
+/* User message styling */
 .user-message {
   padding: 0.5rem;
   border-radius: 5px;
   white-space: pre-wrap;
 }
 
-
+/* Code actions buttons (e.g., copy, execute) */
 .code-actions {
   display: flex;
   justify-content: flex-end;
@@ -94,6 +112,7 @@
   margin-top: 0.25rem;
 }
 
+/* Code block styling */
 .code-block pre {
   white-space: pre-wrap;
   word-wrap: break-word;
@@ -108,6 +127,7 @@
   overflow-x: auto;
 }
 
+/* Code block container */
 .code-block {
   background-color: #2d2d2d;
   padding: 1rem;
@@ -125,9 +145,7 @@
   box-sizing: border-box;
 }
 
-
-
-
+/* Code action buttons (copy, execute) inside code block */
 .code-actions button {
   background-color: #2d2d2d;
   border: 1px solid #444;
@@ -143,7 +161,7 @@
   background-color: #444;
 }
 
-
+/* Chatbox input area (text box and send button) */
 .chatbox-input-area {
   display: flex;
   align-items: center;
@@ -151,15 +169,16 @@
   padding: 12px;
   background: #1b1f24;
   border-radius: 10px;
-  box-shadow: 0 -1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 1;
 }
 
+/* Chatbox input field (text area) */
 .chatbox-input {
   flex: 1;
   resize: none;
   min-height: 40px;
   max-height: 120px;
-  overflow-y: auto;
   padding: 8px;
   font-size: 14px;
   line-height: 1.4;
@@ -169,9 +188,10 @@
   color: white;
   transition: height 0.2s ease;
   font-family: inherit;
+  overflow: hidden; /* Ensure input doesn't overflow */
 }
 
-
+/* Action and send buttons */
 .action-button,
 .send-button {
   padding: 8px 12px;
@@ -187,4 +207,19 @@
 .action-button:hover,
 .send-button:hover {
   background-color: #3a52c7;
+}
+
+/* Global scroll for body */
+body {
+  overflow-y: auto; /* Enable vertical scrolling for the entire page */
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #181818; /* Dark background color */
+  color: white; /* White text color */
+  height: 100vh; /* Ensure the body takes full height of the viewport */
+}
+
+/* Ensure the body does not show horizontal scrollbars */
+html {
+  overflow-x: hidden;
 }
