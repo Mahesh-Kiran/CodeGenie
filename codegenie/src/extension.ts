@@ -32,28 +32,24 @@ export function activate(context: vscode.ExtensionContext) {
         }
         return cleaned;
     }
-
     function extractOnlyCode(response: string): string {
-        let cleaned = response
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line !== '.' && line !== '')
-            .join('\n')
-            .trim();
-
-        const codeBlocks = [];
-        const codeBlockRegex = /``````/g;
+        // Extract code blocks if presentu
+        const codeBlockRegex = /```(?:[\w]*)\n([\s\S]*?)```/g;
         let match;
-        while ((match = codeBlockRegex.exec(cleaned)) !== null) {
+        const codeBlocks = [];
+    
+        while ((match = codeBlockRegex.exec(response)) !== null) {
             codeBlocks.push(match[1].trim());
         }
-
+    
         if (codeBlocks.length > 0) {
             return codeBlocks.join('\n\n');
         }
-
-        return cleaned
+    
+        // Fallback: simple filtering
+        return response
             .split('\n')
+            .map(line => line.trim())
             .filter(line =>
                 line &&
                 !line.startsWith('#') &&
@@ -63,6 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
             .join('\n')
             .trim();
     }
+    
 
 
     async function generateCodeFromPrompt(editor: vscode.TextEditor, prompt: string) {
@@ -84,14 +81,6 @@ export function activate(context: vscode.ExtensionContext) {
             editor.edit(editBuilder => {
                 editBuilder.insert(editor.selection.active, `\n${aiResponse.trim()}\n`);
             });
-
-            // Send full explanation + code to Webview
-            if (provider && provider._view) {
-                provider._view.webview.postMessage({
-                    type: "aiResponse",
-                    content: rawResponse
-                });
-            }
 
             vscode.window.showInformationMessage("✅ Code inserted!");
             updateStatusBar();
@@ -155,15 +144,15 @@ export function activate(context: vscode.ExtensionContext) {
         await generateCodeFromPrompt(editor, lastComment);
     });
 
-    let enableAutocomplete = vscode.commands.registerCommand('codegenie.enableAutocomplete', () => {
+    let enable = vscode.commands.registerCommand('codegenie.enable', () => {
         EXTENSION_STATUS = true;
-        vscode.window.showInformationMessage("✅ CodeGenie Autocomplete Enabled");
+        vscode.window.showInformationMessage("✅ CodeGenie Enabled");
         updateStatusBar();
     });
 
-    let disableAutocomplete = vscode.commands.registerCommand('codegenie.disableAutocomplete', () => {
+    let disable = vscode.commands.registerCommand('codegenie.disable', () => {
         EXTENSION_STATUS = false;
-        vscode.window.showWarningMessage("CodeGenie Autocomplete Disabled");
+        vscode.window.showWarningMessage("CodeGenie Disabled");
         updateStatusBar();
     });
 
@@ -171,7 +160,7 @@ export function activate(context: vscode.ExtensionContext) {
         inlineSuggestionRequested = true;
         await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
     });
-    context.subscriptions.push(generateCode, generateFromComment,triggerInlineCompletion, enableAutocomplete, disableAutocomplete);
+    context.subscriptions.push(generateCode, generateFromComment, triggerInlineCompletion, enable, disable);
 
     const inlineProvider: vscode.InlineCompletionItemProvider = {
         provideInlineCompletionItems: async (
@@ -182,7 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
         ): Promise<vscode.InlineCompletionItem[]> => {
             if (!EXTENSION_STATUS) return [];
             if (!inlineSuggestionRequested) return [];
-            inlineSuggestionRequested = false; 
+            inlineSuggestionRequested = false;
 
             let textBeforeCursor = document.getText(new vscode.Range(position.with(undefined, 0), position)).trim();
             if (!textBeforeCursor) {
@@ -202,7 +191,9 @@ export function activate(context: vscode.ExtensionContext) {
                 statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
 
                 let rawResponse = await fetchAICompletion(textBeforeCursor, API_URL, 1000);
-                let aiResponse = removeQueryFromResponse(rawResponse, textBeforeCursor);
+                let cleanedResponse = removeQueryFromResponse(rawResponse, textBeforeCursor);
+                let aiResponse = extractOnlyCode(cleanedResponse);
+
                 if (!aiResponse || aiResponse.trim() === "") {
                     statusBarItem.text = "$(alert) CodeGenie: No response";
                     return [];

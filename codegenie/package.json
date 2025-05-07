@@ -3,7 +3,7 @@
     "displayName": "CodeGenie",
     "description": "AI-powered coding assistant using DeepSeek Coder.",
     "version": "1.0.0",
-    "publisher": "Mahesh/KC",
+    "publisher": "G-336",
     "engines": {
         "vscode": "^1.75.0"
     },
@@ -49,18 +49,53 @@
                 "title": "CodeGenie: Trigger Inline Completion"
             },
             {
-                "command": "codegenie.enableAutocomplete",
-                "title": "CodeGenie: Enable Autocomplete"
+                "command": "codegenie.debugSelectedCode",
+                "title": "CodeGenie: Debug Selected Code"
             },
             {
-                "command": "codegenie.disableAutocomplete",
-                "title": "CodeGenie: Disable Autocomplete"
+                "command": "codegenie.enable",
+                "title": "CodeGenie: EnableinVSCode"
+            },
+            {
+                "command": "codegenie.disable",
+                "title": "CodeGenie: DisableinVSCode"
             }
         ],
         "keybindings": [
             {
-                "command": "codegenie.triggerInlineCompletion",
+                "command": "codegenie.getCode",
                 "key": "ctrl+alt+g",
+                "mac": "cmd+alt+g",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.triggerInlineCompletion",
+                "key": "ctrl+alt+i",
+                "mac": "cmd+alt+i",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.generateFromComment",
+                "key": "ctrl+alt+c",
+                "mac": "cmd+alt+c",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.debugSelectedCode",
+                "key": "ctrl+alt+s",
+                "mac": "cmd+alt+s",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.enable",
+                "key": "ctrl+alt+e",
+                "mac": "cmd+alt+e",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.disable",
+                "key": "ctrl+alt+d",
+                "mac": "cmd+alt+d",
                 "when": "editorTextFocus"
             }
         ]

@@ -1,6 +1,7 @@
 /* Container for the entire chatbox */
 .chatbox-container {
-  height: 100vh;
+  /* height: 100vh; */
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   background: #181818;
@@ -8,7 +9,8 @@
   font-family: 'Segoe UI', sans-serif;
   padding: 12px;
   box-sizing: border-box;
-  overflow: hidden; /* Prevent container from being scrollable */
+  /* overflow-y: auto; */
+  /* overflow: hidden; Prevent container from being scrollable */
 }
 
 /* Chat history section that is not scrollable anymore */
@@ -18,8 +20,10 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  max-height: calc(100vh - 160px); /* Ensure space for input and padding */
+  /* max-height: calc(100vh - 160px); */
+  overflow-y: auto;
 }
+
 
 /* Individual message bubbles */
 .message-bubble {
@@ -163,7 +167,10 @@
 
 /* Chatbox input area (text box and send button) */
 .chatbox-input-area {
+  position: sticky;
+  bottom: 0;
   display: flex;
+  /* margin-top: auto; */
   align-items: center;
   gap: 10px;
   padding: 12px;
@@ -216,10 +223,10 @@ body {
   font-family: 'Segoe UI', sans-serif;
   background-color: #181818; /* Dark background color */
   color: white; /* White text color */
-  height: 100vh; /* Ensure the body takes full height of the viewport */
+  /* height: 100vh; Ensure the body takes full height of the viewport */
 }
 
 /* Ensure the body does not show horizontal scrollbars */
 html {
-  overflow-x: hidden;
+  overflow-x: auto;
 }

@@ -6,7 +6,7 @@ export class CodeGenieViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "codegenieView";
   public _view?: vscode.WebviewView;
 
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) { }
 
   resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -58,23 +58,25 @@ export class CodeGenieViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.onDidReceiveMessage(async (message) => {
       if (message.type === "insertCode") {
-        const editor = vscode.window.activeTextEditor;
+        let editor = vscode.window.activeTextEditor;
         if (!editor) {
-          vscode.window.showErrorMessage("No active editor to insert code.");
+          vscode.window.showErrorMessage("No active editor.");
           return;
         }
+    
+        // Focus without changing cursor
+        await vscode.window.showTextDocument(editor.document, editor.viewColumn);
+        
+        // Get fresh reference
+        editor = vscode.window.activeTextEditor;
+        if (!editor) return;
+    
+        // Insert code
         await editor.edit(editBuilder => {
-          editBuilder.insert(editor.selection.active, message.code);
+          editBuilder.insert(editor!.selection.active, message.code);
         });
-    
-        const pos = editor.selection.active;
-        const newPos = pos.with(pos.line + message.code.split('\n').length - 1, 
-                                message.code.split('\n').slice(-1)[0].length);
-        editor.selection = new vscode.Selection(newPos, newPos);
-    
-        vscode.window.showInformationMessage("Code inserted from CodeGenie!");
       }
-    });
-    
+    });    
+
   }
 }
