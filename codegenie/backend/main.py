@@ -44,8 +44,35 @@ async def generate_code(request: CodeRequest):
         do_sample=True,
         pad_token_id=model.config.eos_token_id  # Prevents early stopping
     )
+    full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response = full_output[len(request.prompt):].strip()
+    return {"response": response}
 
-    response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+@app.post("/debug")
+async def debug_code(request: CodeRequest):
+    code_to_debug = request.prompt.strip()
+    enhanced_prompt = (
+        "Analyze the following code. "
+        "List ONLY the syntax or logical errors (if any) found in the code. "
+        "If the code is correct, reply with 'No errors found.'\n\n"
+        f"Code:\n{code_to_debug}"  
+    )
+    inputs = tokenizer(enhanced_prompt, return_tensors="pt").to("cuda")
+    outputs = model.generate(
+    **inputs,
+    max_length=request.max_tokens  ,
+    temperature=0.3,              # Slightly more randomness (avoids loops)
+    do_sample=True,
+    pad_token_id=model.config.eos_token_id,
+    eos_token_id=model.config.eos_token_id
+    )
+
+    full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    # Remove the prompt from the output if the model echoes it
+    if full_output.startswith(enhanced_prompt):
+        response = full_output[len(enhanced_prompt):].lstrip("\n\r ")
+    else:
+        response = full_output
     return {"response": response}
 
 print("✅ FastAPI Server is ready!")
