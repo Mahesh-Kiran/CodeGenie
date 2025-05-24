@@ -13,14 +13,29 @@
   /* overflow: hidden; Prevent container from being scrollable */
 }
 
-/* Chat history section that is not scrollable anymore */
+.chatbox-input-area {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 98vw;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  background: #1b1f24;
+  border-radius: 0;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+}
+
 .chatbox-history {
   flex: 1;
   padding: 16px;
+  padding-bottom: 100px; /* Make sure this is >= input area height */
   display: flex;
   flex-direction: column;
   gap: 10px;
-  /* max-height: calc(100vh - 160px); */
   overflow-y: auto;
 }
 
@@ -122,6 +137,12 @@
   word-wrap: break-word;
 }
 
+.send-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+
 .bot-message,
 .message-bubble {
   word-wrap: break-word;
@@ -156,7 +177,7 @@
   color: #eee;
   padding: 5px 10px;
   cursor: pointer;
-  border-radius: 4px;
+  border-radius: 10px;
   font-size: 14px;
   transition: 0.2s;
 }
@@ -165,31 +186,16 @@
   background-color: #444;
 }
 
-/* Chatbox input area (text box and send button) */
-.chatbox-input-area {
-  position: sticky;
-  bottom: 0;
-  display: flex;
-  /* margin-top: auto; */
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  background: #1b1f24;
-  border-radius: 10px;
-  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
-  z-index: 1;
-}
-
 /* Chatbox input field (text area) */
 .chatbox-input {
   flex: 1;
   resize: none;
   min-height: 40px;
   max-height: 120px;
-  padding: 8px;
+  padding: 7px;
   font-size: 14px;
   line-height: 1.4;
-  border-radius: 6px;
+  border-radius: 7px;
   border: 1px solid #333;
   background: #2a2f36;
   color: white;
@@ -204,11 +210,16 @@
   padding: 8px 12px;
   background-color: #4e6ef2;
   border: none;
-  border-radius: 6px;
+  border-radius: 15px;
   color: white;
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
+}
+
+.send-button {
+  font-size: 10px;
+  border-radius: 50px;
 }
 
 .action-button:hover,
@@ -229,4 +240,39 @@ body {
 /* Ensure the body does not show horizontal scrollbars */
 html {
   overflow-x: auto;
+}
+
+
+.markdown {
+  font-family: sans-serif;
+  line-height: 1.6;
+  color: #e0e0e0;
+}
+
+.markdown p {
+  margin: 0.5em 0;
+}
+
+.markdown code {
+  background: #2d2d2d;
+  color: #f8f8f2;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: monospace;
+}
+
+.markdown pre {
+  background: #2d2d2d;
+  padding: 1em;
+  border-radius: 6px;
+  overflow-x: auto;
+}
+
+.markdown strong {
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.markdown em {
+  font-style: italic;
 }
