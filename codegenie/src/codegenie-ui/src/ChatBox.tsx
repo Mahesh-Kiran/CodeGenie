@@ -1,24 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
 import { fetchAICompletion } from "./api";
-import "./styles.css";
+import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { IoSendOutline, IoAddCircleOutline } from 'react-icons/io5';
 import { HiDesktopComputer } from 'react-icons/hi';
 import { BsPciCard } from 'react-icons/bs';
 import { BsCopy } from "react-icons/bs";
 import { LuFileCode2 } from "react-icons/lu";
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import ReactMarkdown from 'react-markdown';
+import ThemeSwitcher from "./ThemeSwitcher";
+import "./styles.css";
 
 const ChatBox = () => {
   const [messages, setMessages] = useState<{ text: string; sender: string }[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
+  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
 
   function extractCodeBlocksWithLang(text: string) {
     const codeRegex = /```(\w+)?\n([\s\S]*?)```/g;
@@ -32,7 +33,6 @@ const ChatBox = () => {
     }
     return codeBlocks;
   }
-
 
   function removeCodeBlocks(text: string) {
     return text.replace(/```(?:[\w]*)?\n[\s\S]*?```/g, "").trim();
@@ -79,24 +79,11 @@ const ChatBox = () => {
     return <pre className="user-message">{msg.text}</pre>;
   };
 
-  const scrollToBottom = () => {
-    if (chatRef.current) {
-      chatRef.current.scrollTo({
-        top: chatRef.current.scrollHeight,
-        behavior: "smooth"
-      });
-    }
-  };
-
   const handleCopy = (code: string, index: number) => {
     navigator.clipboard.writeText(code);
     setCopiedIndex(index);
     setTimeout(() => setCopiedIndex(null), 5000);
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages, isTyping]);
 
   useEffect(() => {
     const textarea = textareaRef.current;
@@ -168,49 +155,54 @@ const ChatBox = () => {
   };
 
   return (
-    <div className="chatbox-container">
-      <div className="chatbox-history" ref={chatRef}>
-        {messages.map((msg, index) => (
-          <div key={index} className={`message-bubble ${msg.sender === "user" ? "user-bubble" : "bot-bubble"}`}>
-            {renderMessage(msg)}
-          </div>
-        ))}
-        {isTyping && <div className="typing-indicator">CodeGenie is typing...</div>}
+    <div>
+      <div className="theme-switcher-fixed">
+        <ThemeSwitcher />
       </div>
-      <div className="chatbox-input-area">
-        <button className="action-button" onClick={() => fileInputRef.current?.click()} title="Attachments">
-          <IoAddCircleOutline size={20} />
-        </button>
-        <button
-          className="action-button"
-          onClick={() => setIsOnline(prev => !prev)}
-          title={isOnline ? "RTX Mode (Remote)" : "Local Mode (on device)"}
-        >
-          {isOnline ? <BsPciCard size={20} /> : <HiDesktopComputer size={20} />}
-        </button>
-        <textarea
-          ref={textareaRef}
-          className="chatbox-input"
-          placeholder="Type your task here"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              sendMessage();
-            }
-          }}
-        />
-        <input
-          type="file"
-          ref={fileInputRef}
-          style={{ display: "none" }}
-          onChange={handleFileUpload}
-        />
-        <button className="send-button" onClick={sendMessage} disabled={isTyping}>
-          <IoSendOutline size={20} />
-        </button>
+      <div className="chatbox-container">
+        <div className="chatbox-history" ref={chatRef}>
+          {messages.map((msg, index) => (
+            <div key={index} className={`message-bubble ${msg.sender === "user" ? "user-bubble" : "bot-bubble"}`}>
+              {renderMessage(msg)}
+            </div>
+          ))}
+          {isTyping && <div className="typing-indicator">CodeGenie is typing...</div>}
+        </div>
+        <div className="chatbox-input-area">
+          <button className="action-button" onClick={() => fileInputRef.current?.click()} title="Attachments">
+            <IoAddCircleOutline size={20} />
+          </button>
+          <button
+            className="action-button"
+            onClick={() => setIsOnline(prev => !prev)}
+            title={isOnline ? "RTX Mode (Remote)" : "Local Mode (on device)"}
+          >
+            {isOnline ? <BsPciCard size={20} /> : <HiDesktopComputer size={20} />}
+          </button>
+          <textarea
+            ref={textareaRef}
+            className="chatbox-input"
+            placeholder="Type your task here"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+          />
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: "none" }}
+            onChange={handleFileUpload}
+          />
+          <button className="send-button" onClick={sendMessage} disabled={isTyping}>
+            <IoSendOutline size={20} />
+          </button>
 
+        </div>
       </div>
     </div>
   );

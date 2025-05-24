@@ -1,11 +1,50 @@
-/* Container for the entire chatbox */
+:root {
+  --bg-primary: #f9f9f9;
+  --text-primary: #1a1a1a;
+  --user-bubble-bg: rgba(78, 110, 242, 0.1);
+  --user-bubble-border: #4e6ef2;
+  --user-bubble-text: #1a1a1a;
+  --bot-bubble-bg: #ffffff;
+  --bot-bubble-border: #dddddd;
+  --bot-bubble-text: #333333;
+  --input-area-bg: #ffffff;
+  --input-bg: #f0f0f0;
+  --input-border: #cccccc;
+  --button-bg: #4e6ef2;
+  --button-hover-bg: #3a52c7;
+  --button-text: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.05);
+  --code-bg: #f4f4f4;
+  --code-text: #1a1a1a;
+}
+
+.dark {
+  --bg-primary: #181818;
+  --text-primary: #ffffff;
+  --user-bubble-bg: rgba(82, 113, 255, 0.2);
+  --user-bubble-border: #4e6ef2;
+  --user-bubble-text: #dbe0ff;
+  --bot-bubble-bg: rgba(255, 255, 255, 0.05);
+  --bot-bubble-border: #333;
+  --bot-bubble-text: #dcdcdc;
+  --input-area-bg: #1b1f24;
+  --input-bg: #2a2f36;
+  --input-border: #333;
+  --button-bg: #4e6ef2;
+  --button-hover-bg: #3a52c7;
+  --button-text: #ffffff;
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --code-bg: #2d2d2d;
+  --code-text: #f8f8f2;
+}
+
 .chatbox-container {
   /* height: 100vh; */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #181818;
-  color: #ffffff;
+  background: var(--bg-primary);    
+  color: var(--text-primary);       
   font-family: 'Segoe UI', sans-serif;
   padding: 12px;
   box-sizing: border-box;
@@ -23,16 +62,16 @@
   align-items: center;
   gap: 10px;
   padding: 12px;
-  background: #1b1f24;
+  background: var(--input-area-bg);   
   border-radius: 0;
-  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 -1px 3px var(--shadow-color); 
   z-index: 100;
 }
 
 .chatbox-history {
   flex: 1;
   padding: 16px;
-  padding-bottom: 100px; /* Make sure this is >= input area height */
+  padding-bottom: 100px; 
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -50,24 +89,24 @@
   line-height: 1.5;
   word-wrap: break-word;
   white-space: pre-wrap;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px var(--shadow-color); 
   animation: fadeIn 0.3s ease-in-out;
 }
 
 /* User's message style */
 .user-bubble {
   align-self: flex-end;
-  background: rgba(82, 113, 255, 0.2);
-  border: 1px solid #4e6ef2;
-  color: #dbe0ff;
+  background: var(--user-bubble-bg);          
+  border: 1px solid var(--user-bubble-border);
+  color: var(--user-bubble-text);             
 }
 
 /* Bot's message style */
 .bot-bubble {
   align-self: flex-start;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid #333;
-  color: #dcdcdc;
+  background: var(--bot-bubble-bg);           
+  border: 1px solid var(--bot-bubble-border); 
+  color: var(--bot-bubble-text);              
 }
 
 /* Typing indicator animation */
@@ -123,7 +162,6 @@
   white-space: pre-wrap;
 }
 
-/* Code actions buttons (e.g., copy, execute) */
 .code-actions {
   display: flex;
   justify-content: flex-end;
@@ -142,7 +180,6 @@
   cursor: not-allowed;
 }
 
-
 .bot-message,
 .message-bubble {
   word-wrap: break-word;
@@ -152,9 +189,9 @@
   overflow-x: auto;
 }
 
-/* Code block container */
 .code-block {
-  background-color: #2d2d2d;
+  background-color: var(--code-bg);   
+  color: var(--code-text);            
   padding: 1rem;
   border-radius: 6px;
   overflow-x: auto;
@@ -170,11 +207,10 @@
   box-sizing: border-box;
 }
 
-/* Code action buttons (copy, execute) inside code block */
 .code-actions button {
-  background-color: #2d2d2d;
+  background-color: var(--code-bg);   
   border: 1px solid #444;
-  color: #eee;
+  color: var(--code-text);            
   padding: 5px 10px;
   cursor: pointer;
   border-radius: 10px;
@@ -186,7 +222,6 @@
   background-color: #444;
 }
 
-/* Chatbox input field (text area) */
 .chatbox-input {
   flex: 1;
   resize: none;
@@ -196,22 +231,21 @@
   font-size: 14px;
   line-height: 1.4;
   border-radius: 7px;
-  border: 1px solid #333;
-  background: #2a2f36;
-  color: white;
+  border: 1px solid var(--input-border);  
+  background: var(--input-bg);            
+  color: var(--text-primary);             
   transition: height 0.2s ease;
   font-family: inherit;
   overflow: hidden; /* Ensure input doesn't overflow */
 }
 
-/* Action and send buttons */
 .action-button,
 .send-button {
   padding: 8px 12px;
-  background-color: #4e6ef2;
+  background-color: var(--button-bg);     
   border: none;
   border-radius: 15px;
-  color: white;
+  color: var(--button-text);              
   font-size: 16px;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
@@ -224,17 +258,17 @@
 
 .action-button:hover,
 .send-button:hover {
-  background-color: #3a52c7;
+  background-color: var(--button-hover-bg); 
 }
 
 /* Global scroll for body */
 body {
-  overflow-y: auto; /* Enable vertical scrolling for the entire page */
+  overflow-y: auto; 
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #181818; /* Dark background color */
-  color: white; /* White text color */
-  /* height: 100vh; Ensure the body takes full height of the viewport */
+  background-color: var(--bg-primary);     
+  color: var(--text-primary);              
+  /* height: 100vh;  */
 }
 
 /* Ensure the body does not show horizontal scrollbars */
@@ -246,7 +280,7 @@ html {
 .markdown {
   font-family: sans-serif;
   line-height: 1.6;
-  color: #e0e0e0;
+  color: var(--text-primary);              
 }
 
 .markdown p {
@@ -254,15 +288,16 @@ html {
 }
 
 .markdown code {
-  background: #2d2d2d;
-  color: #f8f8f2;
+  background: var(--code-bg);              
+  color: var(--code-text);                 
   padding: 2px 4px;
-  border-radius: 4px;
+  border-radius: 15px;
   font-family: monospace;
 }
 
 .markdown pre {
-  background: #2d2d2d;
+  background: var(--code-bg);              
+  color: var(--code-text);                 
   padding: 1em;
   border-radius: 6px;
   overflow-x: auto;
@@ -270,9 +305,32 @@ html {
 
 .markdown strong {
   font-weight: bold;
-  color: #ffffff;
+  color: var(--text-primary);              
 }
 
 .markdown em {
   font-style: italic;
+}
+
+.theme-switcher-fixed {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 2000;
+}
+
+.theme-toggle-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 22px;
+  transition: color 0.2s;
+  padding: 6px;
+  border-radius: 50%;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--user-bubble-bg);
+  color: var(--button-bg);
 }
