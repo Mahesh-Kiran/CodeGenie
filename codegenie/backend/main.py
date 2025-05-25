@@ -48,6 +48,22 @@ async def generate_code(request: CodeRequest):
     response = full_output[len(request.prompt):].strip()
     return {"response": response}
 
+@app.post("/generate-large")
+async def generate_large_code(request: CodeRequest):
+    max_tokens = min(request.max_tokens, 4096)  # or whatever your model can handle
+    inputs = tokenizer(request.prompt, return_tensors="pt").to("cuda")
+    outputs = model.generate(
+        **inputs,
+        max_length=max_tokens,
+        temperature=0.2,
+        do_sample=True,
+        pad_token_id=model.config.eos_token_id
+    )
+    full_output = tokenizer.decode(outputs[0], skip_special_tokens=True)
+    response = full_output[len(request.prompt):].strip()
+    return {"response": response}
+
+
 @app.post("/debug")
 async def debug_code(request: CodeRequest):
     code_to_debug = request.prompt.strip()

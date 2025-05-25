@@ -334,3 +334,59 @@ html {
   background: var(--user-bubble-bg);
   color: var(--button-bg);
 }
+
+.attached-file-chip {
+  display: flex;
+  align-items: center;
+  background: var(--user-bubble-bg, #e0e7ff);
+  border: 1px solid var(--user-bubble-border, #4e6ef2);
+  color: var(--user-bubble-text, #1a1a1a);
+  border-radius: 20px;
+  padding: 7px 14px;
+  margin-bottom: 10px;
+  font-size: 15px;
+  opacity: 0;
+  transform: translateY(-10px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  min-width: 0;
+  max-width: 95%;
+  box-shadow: 0 2px 8px var(--shadow-color, rgba(0,0,0,0.07));
+  position: relative;
+  z-index: 2;
+}
+
+.attached-file-chip.show {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.remove-file-btn {
+  background: transparent;
+  border: none;
+  color: var(--user-bubble-border, #4e6ef2);
+  font-size: 16px;
+  margin-left: 8px;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.remove-file-btn:hover,
+.remove-file-btn:focus {
+  background: var(--user-bubble-border, #4e6ef2);
+  color: #fff;
+  outline: none;
+}
