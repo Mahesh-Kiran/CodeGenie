@@ -53,6 +53,14 @@
                 "title": "CodeGenie: Debug Selected Code"
             },
             {
+                "command": "codegenie.explainCode",
+                "title": "CodeGenie: Explain Code"
+            },
+            {
+                "command": "codegenie.improveCode",
+                "title": "CodeGenie: Improve Code"
+            },
+            {
                 "command": "codegenie.enable",
                 "title": "CodeGenie: EnableinVSCode"
             },
@@ -61,6 +69,40 @@
                 "title": "CodeGenie: DisableinVSCode"
             }
         ],
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "codegenie.getCode",
+                    "when": "!editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.explainCode",
+                    "when": "editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.improveCode",
+                    "when": "editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.debugSelectedCode",
+                    "when": "editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.generateFromComment",
+                    "when": "!editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.triggerInlineCompletion",
+                    "when": "!editorHasSelection",
+                    "group": "@2_codegenie"
+                }
+            ]
+        },
         "keybindings": [
             {
                 "command": "codegenie.getCode",

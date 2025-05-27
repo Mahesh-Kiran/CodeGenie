@@ -7,6 +7,7 @@ import { HiDesktopComputer } from 'react-icons/hi';
 import { BsPciCard } from 'react-icons/bs';
 import { BsCopy } from "react-icons/bs";
 import { LuFileCode2 } from "react-icons/lu";
+import { IoMdHelp } from "react-icons/io";
 import ReactMarkdown from 'react-markdown';
 import ThemeSwitcher from "./ThemeSwitcher";
 import "./styles.css";
@@ -23,6 +24,8 @@ const ChatBox = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [pendingFileContents, setPendingFileContents] = useState<string[]>([]);
+  const [showHelpPopup, setShowHelpPopup] = useState(false);
+  const [showFullHelp, setShowFullHelp] = useState(false);
 
 
   function extractCodeBlocksWithLang(text: string) {
@@ -113,6 +116,46 @@ const ChatBox = () => {
     return () => clearTimeout(timeout);
   }, [messages, isTyping]);
 
+  useEffect(() => {
+    function handleVsCodeMessage(event: MessageEvent) {
+      const message = event.data;
+      if (message && message.type === "explainCode") {
+        // Show selected code as user message
+        setMessages(prev => [
+          ...prev,
+          { text: `Explain this code:\n\n${message.code}`, sender: "user" }
+        ]);
+        setIsTyping(true);
+
+        // Call your backend /explain endpoint
+        fetch("http://127.0.0.1:8000/explain", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: message.code,
+            max_tokens: 2048
+          })
+        })
+          .then(res => res.json())
+          .then(data => {
+            setMessages(prev => [
+              ...prev,
+              { text: data.response, sender: "bot" }
+            ]);
+          })
+          .catch(() => {
+            setMessages(prev => [
+              ...prev,
+              { text: "❌ Error: Could not explain code.", sender: "bot" }
+            ]);
+          })
+          .finally(() => setIsTyping(false));
+      }
+    }
+
+    window.addEventListener("message", handleVsCodeMessage as EventListener);
+    return () => window.removeEventListener("message", handleVsCodeMessage as EventListener);
+  }, []);
 
   const sendMessage = async () => {
     if (!input.trim() && pendingFiles.length === 0) return;
@@ -186,6 +229,18 @@ const ChatBox = () => {
       <div className="theme-switcher-fixed">
         <ThemeSwitcher />
       </div>
+      <div className="help-button-fixed">
+        <button
+          className="help-button"
+          onClick={() => setShowHelpPopup(true)}
+          aria-label="Show help"
+          title="Show CodeGenie Help"
+        >
+          <IoMdHelp size={14} />
+        </button>
+
+      </div>
+
       <div className="chatbox-container">
         <div className="chatbox-history" ref={chatRef}>
           {messages.map((msg, index) => (
@@ -255,10 +310,119 @@ const ChatBox = () => {
                 (pendingFiles.length > 0 && pendingFileContents.length < pendingFiles.length)
               }
             >
-              <IoSendOutline size={20} />
+              <IoSendOutline size={25} />
             </button>
           </div>
         </div>
+        {showHelpPopup && (
+          <div className="help-popup-overlay" onClick={() => setShowHelpPopup(false)}>
+            <div className="help-popup" onClick={e => e.stopPropagation()}>
+              <h2>CodeGenie Quick Help</h2>
+              <ul>
+                <li>💬 <b>Chat with AI</b> about code and tasks</li>
+                <li>📎 <b>Attach multiple files</b> for context-aware analysis</li>
+                <li>🖱️ <b>Right-click code</b> for Explain, Debug, or Improve</li>
+                <li>💡 <b>Generate code</b> or comments from prompts</li>
+                <li>🐞 <b>Debug code</b> for instant error analysis</li>
+                <li>🌓 <b>Switch themes</b> with the moon/sun icon</li>
+                <li>⚡ <b>Inline completions</b> for code suggestions</li>
+              </ul>
+              <button
+                className="more-button"
+                onClick={() => { setShowFullHelp(true); setShowHelpPopup(false); }}
+              >
+                More
+              </button>
+              <button
+                className="close-button"
+                onClick={() => setShowHelpPopup(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showFullHelp && (
+          <div className="help-full-overlay" onClick={() => setShowFullHelp(false)}>
+            <div className="help-full-page" onClick={e => e.stopPropagation()}>
+              <h1>CodeGenie: Full Guide</h1>
+              <h2>Feature, Commands, Access & Usage</h2>
+              <table className="cg-feature-table">
+                <thead>
+                  <tr>
+                    <th>Feature</th>
+                    <th>Command</th>
+                    <th>How to Access</th>
+                    <th>When to Use</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Generate Code</td>
+                    <td><code>codegenie.getCode</code></td>
+                    <td>Command Palette, Sidebar, Right-click</td>
+                    <td>When you want to generate new code from a prompt.</td>
+                  </tr>
+                  <tr>
+                    <td>Generate from Last Comment</td>
+                    <td><code>codegenie.generateFromComment</code></td>
+                    <td>Command Palette</td>
+                    <td>To generate code based on your last code comment.</td>
+                  </tr>
+                  <tr>
+                    <td>Trigger Inline Completion</td>
+                    <td><code>codegenie.triggerInlineCompletion</code></td>
+                    <td>Command Palette, <kbd>Ctrl+T Ctrl+I</kbd></td>
+                    <td>For Copilot-style inline code suggestions.</td>
+                  </tr>
+                  <tr>
+                    <td>Debug Selected Code</td>
+                    <td><code>codegenie.debugSelectedCode</code></td>
+                    <td>Right-click, Command Palette</td>
+                    <td>To analyze selected code for errors and get fixes.</td>
+                  </tr>
+                  <tr>
+                    <td>Explain Code</td>
+                    <td><code>codegenie.explainCode</code></td>
+                    <td>Right-click, Command Palette</td>
+                    <td>When you want a plain-language explanation of code.</td>
+                  </tr>
+                  <tr>
+                    <td>Improve Code</td>
+                    <td><code>codegenie.improveCode</code></td>
+                    <td>Right-click, Command Palette</td>
+                    <td>To optimize, clean up, or refactor existing code.</td>
+                  </tr>
+                  <tr>
+                    <td>Enable/Disable</td>
+                    <td>
+                      <code>codegenie.enable</code><br />
+                      <code>codegenie.disable</code>
+                    </td>
+                    <td>Command Palette</td>
+                    <td>To turn CodeGenie on or off in VS Code.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <h2>Multi-file Support</h2>
+              <p>
+                <b>Attach multiple files</b> using the <b>paperclip</b> icon in the chat input.<br />
+                All files will be analyzed together for better, context-aware answers and code generation.<br />
+                <i>Tip: Remove files before sending if you want to exclude them.</i>
+              </p>
+              <h2>Access Methods Explained</h2>
+              <ul>
+                <li><b>Command Palette</b>: <kbd>Ctrl+Shift+P</kbd> (or <kbd>Cmd+Shift+P</kbd> on Mac), then type the command name.</li>
+                <li><b>Sidebar Panel</b>: Open the CodeGenie AI panel from the sidebar (rocket icon).</li>
+                <li><b>Right-click (Context Menu)</b>: Select code in the editor, then right-click to see CodeGenie actions.</li>
+                <li><b>Keyboard Shortcut</b>: Use <kbd>Ctrl+T Ctrl+I</kbd> for inline completions.</li>
+              </ul>
+              <button className="close-button" onClick={() => setShowFullHelp(false)}>Close</button>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

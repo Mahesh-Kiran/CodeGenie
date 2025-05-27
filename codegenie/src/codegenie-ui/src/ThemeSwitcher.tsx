@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { MdOutlineDarkMode } from "react-icons/md";
-import { FaRegLightbulb } from "react-icons/fa";
+import { CiLight } from "react-icons/ci";
 
 type Theme = 'dark' | 'light';
 
@@ -25,7 +25,7 @@ const ThemeSwitcher: React.FC = () => {
       aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
       title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
     >
-      {theme === 'dark' ? <FaRegLightbulb size={22} /> : <MdOutlineDarkMode size={22} />}
+      {theme === 'dark' ? <CiLight  size={22} /> : <MdOutlineDarkMode size={22} />}
     </button>
   );
 };

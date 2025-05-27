@@ -92,7 +92,12 @@ export class CodeGenieViewProvider implements vscode.WebviewViewProvider {
         }
       }
     });
-
-
+  }
+  public postMessage(message: any) {
+    if (this._view) {
+      this._view.webview.postMessage(message);
+    } else {
+      vscode.window.showErrorMessage("CodeGenie panel is not visible.");
+    }
   }
 }
