@@ -8,8 +8,6 @@ let EXTENSION_STATUS = true;
 let inlineSuggestionRequested = false;
 let statusBarItem: vscode.StatusBarItem;
 let provider: CodeGenieViewProvider;
-let inlineImprovementCode: { code: string, selection: vscode.Selection } | null = null;
-
 export function activate(context: vscode.ExtensionContext) {
     console.log("✅ CodeGenie Extension Activated!");
 
@@ -123,7 +121,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Commands
     let generateCode = vscode.commands.registerCommand('codegenie.getCode', async () => {
         if (!EXTENSION_STATUS) {
-            vscode.window.showErrorMessage("Autocomplete is disabled.");
+            vscode.window.showErrorMessage("Codegenie is disabled.");
             return;
         }
 
@@ -141,7 +139,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     let generateFromComment = vscode.commands.registerCommand('codegenie.generateFromComment', async () => {
         if (!EXTENSION_STATUS) {
-            vscode.window.showErrorMessage("Autocomplete is disabled.");
+            vscode.window.showErrorMessage("Codegenie is disabled.");
             return;
         }
 
@@ -179,6 +177,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     let debugSelectedCode = vscode.commands.registerCommand('codegenie.debugSelectedCode', async () => {
         const editor = vscode.window.activeTextEditor;
+        if (!EXTENSION_STATUS) {
+            vscode.window.showErrorMessage("CodeGenie is disabled.");
+            return;
+        }
         if (!editor) {
             vscode.window.showErrorMessage('Open a file to use CodeGenie.');
             return;
@@ -223,6 +225,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     let explainSelectedCode = vscode.commands.registerCommand('codegenie.explainCode', async () => {
         const editor = vscode.window.activeTextEditor;
+        if (!EXTENSION_STATUS) {
+            vscode.window.showErrorMessage("CodeGenie is disabled.");
+            return;
+        }
         if (!editor) {
             vscode.window.showErrorMessage('Open a file to use CodeGenie.');
             return;
@@ -245,19 +251,21 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     let improveSelectedCode = vscode.commands.registerCommand('codegenie.improveCode', async () => {
+        if (!EXTENSION_STATUS) {
+            vscode.window.showErrorMessage("CodeGenie is disabled.");
+            return;
+        }
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage('Open a file to use CodeGenie.');
             return;
         }
-
         const selection = editor.selection;
         const code = editor.document.getText(selection);
         if (!code.trim()) {
             vscode.window.showWarningMessage('Please select some code to improve.');
             return;
         }
-
         statusBarItem.text = "$(sync~spin) CodeGenie: Improving...";
         try {
             const response = await fetch('http://127.0.0.1:8000/improve', {
@@ -275,39 +283,10 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
-            // Save context for inline provider
-            inlineImprovementCode = { code: improved, selection };
-            inlineSuggestionRequested = true;
-
-            // Trigger inline suggestion manually
-            await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
-
-            // --- Show Accept/Reject/Show Diff options ---
-            const accept = 'Accept';
-            const reject = 'Reject';
-            const showDiff = 'Show Diff';
-            const choice = await vscode.window.showInformationMessage(
-                'Improved code ready. What would you like to do?',
-                accept, showDiff, reject
-            );
-
-            if (choice === accept) {
-                editor.edit(editBuilder => {
-                    editBuilder.replace(selection, improved);
-                });
-                vscode.window.showInformationMessage('Code replaced with improved version.');
-            } else if (choice === showDiff) {
-                // Show a diff between original and improved code
-                const originalDoc = await vscode.workspace.openTextDocument({ content: code, language: editor.document.languageId });
-                const improvedDoc = await vscode.workspace.openTextDocument({ content: improved, language: editor.document.languageId });
-                vscode.commands.executeCommand(
-                    'vscode.diff',
-                    originalDoc.uri,
-                    improvedDoc.uri,
-                    'Original ↔ Improved'
-                );
-            }
-            // If rejected, do nothing
+            debugOutputChannel.clear();
+            debugOutputChannel.appendLine("---- Improved Code ----\n" + improved);
+            debugOutputChannel.show(true);
+            vscode.window.showInformationMessage('Improved code displayed in Output Console.');
 
             statusBarItem.text = "$(check) CodeGenie: Ready";
         } catch (error) {
@@ -315,8 +294,6 @@ export function activate(context: vscode.ExtensionContext) {
             statusBarItem.text = "$(error) CodeGenie: Error";
         }
     });
-
-
 
     context.subscriptions.push(generateCode, generateFromComment, triggerInlineCompletion, explainSelectedCode, improveSelectedCode, debugSelectedCode, enable, disable);
 
@@ -331,21 +308,6 @@ export function activate(context: vscode.ExtensionContext) {
             if (!inlineSuggestionRequested) return [];
 
             inlineSuggestionRequested = false;
-
-            if (inlineImprovementCode) {
-                const { code, selection } = inlineImprovementCode;
-                inlineImprovementCode = null;
-
-                return [
-                    new vscode.InlineCompletionItem(
-                        new vscode.SnippetString(code),
-                        new vscode.Range(selection.start, selection.end)
-                    )
-                ];
-            }
-
-            inlineSuggestionRequested = false;
-
             let textBeforeCursor = document.getText(new vscode.Range(position.with(undefined, 0), position)).trim();
             if (!textBeforeCursor) {
                 for (let line = position.line - 1; line >= 0; line--) {

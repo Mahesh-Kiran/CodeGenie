@@ -3,10 +3,8 @@ import { fetchAICompletion } from "./api";
 import { darcula } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { IoSendOutline, IoAddCircleOutline } from 'react-icons/io5';
-import { HiDesktopComputer } from 'react-icons/hi';
-import { BsPciCard } from 'react-icons/bs';
+import { MdClearAll } from "react-icons/md";
 import { BsCopy } from "react-icons/bs";
-import { LuFileCode2 } from "react-icons/lu";
 import { IoMdHelp } from "react-icons/io";
 import ReactMarkdown from 'react-markdown';
 import ThemeSwitcher from "./ThemeSwitcher";
@@ -16,7 +14,6 @@ const ChatBox = () => {
   const [messages, setMessages] = useState<{ text: string; sender: string }[]>([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [isOnline, setIsOnline] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -69,14 +66,6 @@ const ChatBox = () => {
                 <button onClick={() => handleCopy(code, idx)}>
                   {copiedIndex === idx ? "Copied" : <BsCopy size={15} />}
                 </button>
-
-                <button onClick={() => {
-                  const vscode = (window as any).acquireVsCodeApi?.();
-                  if (vscode) {
-                    vscode.postMessage({ type: "insertCode", code });
-                  }
-
-                }}><LuFileCode2 size={15} /></button>
               </div>
             </div>
           ))}
@@ -108,6 +97,36 @@ const ChatBox = () => {
       }
     }
   }, [input]);
+
+  // On mount: load state from localStorage
+  useEffect(() => {
+    const savedMessages = localStorage.getItem('chat_messages');
+    const savedInput = localStorage.getItem('chat_input');
+    const savedFiles = localStorage.getItem('chat_files');
+    const savedFileContents = localStorage.getItem('chat_file_contents');
+    if (savedMessages) setMessages(JSON.parse(savedMessages));
+    if (savedInput) setInput(savedInput);
+    if (savedFiles) setPendingFiles(JSON.parse(savedFiles));
+    if (savedFileContents) setPendingFileContents(JSON.parse(savedFileContents));
+  }, []);
+
+  // On state change: save to localStorage
+  useEffect(() => {
+    localStorage.setItem('chat_messages', JSON.stringify(messages));
+  }, [messages]);
+
+  useEffect(() => {
+    localStorage.setItem('chat_input', input);
+  }, [input]);
+
+  useEffect(() => {
+    localStorage.setItem('chat_files', JSON.stringify(pendingFiles));
+  }, [pendingFiles]);
+
+  useEffect(() => {
+    localStorage.setItem('chat_file_contents', JSON.stringify(pendingFileContents));
+  }, [pendingFileContents]);
+
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -185,10 +204,13 @@ const ChatBox = () => {
     setIsTyping(true);
 
     try {
-      const API_URL = pendingFiles.length > 0
+      const totalText = input + pendingFileContents.join('');
+      const estimatedTokens = Math.ceil(totalText.length / 4);
+      const useLargeModel = estimatedTokens > 1000;
+      const API_URL = useLargeModel
         ? "http://127.0.0.1:8000/generate-large"
         : "http://127.0.0.1:8000/generate";
-      const maxTokens = pendingFiles.length > 0 ? 4096 : 1000;
+      const maxTokens = useLargeModel ? 4096 : 1000;
       const aiResponse = await fetchAICompletion(promptToSend, API_URL, maxTokens);
 
       setMessages(prev => [...prev, { text: aiResponse, sender: "bot" }]);
@@ -221,8 +243,9 @@ const ChatBox = () => {
       };
       reader.readAsText(file);
     });
-  };
 
+    e.target.value = "";
+  };
 
   return (
     <div>
@@ -284,11 +307,18 @@ const ChatBox = () => {
             />
             <button
               className="action-button"
-              onClick={() => setIsOnline(prev => !prev)}
-              title={isOnline ? "RTX Mode (Remote)" : "Local Mode (on device)"}
+              onClick={() => {
+                setMessages([]);
+                setInput("");
+                setPendingFiles([]);
+                setPendingFileContents([]);
+              }}
+              title="Clear All Chat"
+              disabled={isTyping}
             >
-              {isOnline ? <BsPciCard size={20} /> : <HiDesktopComputer size={20} />}
+              <MdClearAll size={20} />
             </button>
+
             <textarea
               ref={textareaRef}
               className="chatbox-input"
