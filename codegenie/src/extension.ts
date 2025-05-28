@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import { CodeGenieViewProvider } from "./CodeGenieViewProvider";
-import { fetchAICompletion } from "./codegenie-ui/src/api";
+import { codegenieAPI } from './codegenie-ui/src/api';
 
-const API_URL = "http://127.0.0.1:8000/generate";
 const debugOutputChannel = vscode.window.createOutputChannel("CodeGenie Debug");
 let EXTENSION_STATUS = true;
 let inlineSuggestionRequested = false;
@@ -67,7 +66,7 @@ export function activate(context: vscode.ExtensionContext) {
         statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
 
         try {
-            const rawResponse = await fetchAICompletion(prompt, API_URL, 1000);
+            const rawResponse = await codegenieAPI.generate(prompt);
             const cleanedResponse = removeQueryFromResponse(rawResponse, prompt);
             const aiResponse = extractOnlyCode(cleanedResponse);
 
@@ -194,16 +193,11 @@ export function activate(context: vscode.ExtensionContext) {
         statusBarItem.text = "$(sync~spin) CodeGenie: Debugging...";
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/debug', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: code, max_tokens: 1000 })
-            });
-            const result = await response.json();
+            const result = await codegenieAPI.debug(code); 
             debugOutputChannel.clear();
-            if (result.response) {
-                vscode.window.showInformationMessage(result.response);
-                debugOutputChannel.appendLine(result.response);
+            if (result) {
+                vscode.window.showInformationMessage(result);
+                debugOutputChannel.appendLine(result);
                 debugOutputChannel.show(true);
                 statusBarItem.text = "$(check) CodeGenie: Ready";
             } else {
@@ -211,13 +205,8 @@ export function activate(context: vscode.ExtensionContext) {
                 debugOutputChannel.show(true);
                 statusBarItem.text = "$(alert) CodeGenie: No response";
             }
-            // if (result.response) {
-            //     vscode.window.showInformationMessage(result.response);
-            // } else {
-            //     vscode.window.showWarningMessage("No debug info received.");
-            // }
         } catch (error) {
-            debugOutputChannel.appendLine(`Error debugging code: ${error}`);
+            debugOutputChannel.appendLine(`Error debugging code: ${error instanceof Error ? error.message : String(error)}`);
             debugOutputChannel.show(true);
             statusBarItem.text = "$(error) CodeGenie: Error";
         }
@@ -268,16 +257,10 @@ export function activate(context: vscode.ExtensionContext) {
         }
         statusBarItem.text = "$(sync~spin) CodeGenie: Improving...";
         try {
-            const response = await fetch('http://127.0.0.1:8000/improve', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt: code, max_tokens: 1000 })
-            });
+            // Use the centralized API
+            const improved = await codegenieAPI.improve(code);
 
-            const result = await response.json();
-            const improved = result.response?.trim();
-
-            if (!improved || improved === code) {
+            if (!improved || improved.trim() === code.trim()) {
                 vscode.window.showInformationMessage('No improvements suggested.');
                 statusBarItem.text = "$(check) CodeGenie: Ready";
                 return;
@@ -290,7 +273,7 @@ export function activate(context: vscode.ExtensionContext) {
 
             statusBarItem.text = "$(check) CodeGenie: Ready";
         } catch (error) {
-            vscode.window.showErrorMessage(`Error improving code: ${error}`);
+            vscode.window.showErrorMessage(`Error improving code: ${error instanceof Error ? error.message : String(error)}`);
             statusBarItem.text = "$(error) CodeGenie: Error";
         }
     });
@@ -324,8 +307,7 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 console.log("🔵 Autocomplete for:", textBeforeCursor);
                 statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
-
-                let rawResponse = await fetchAICompletion(textBeforeCursor, API_URL, 1000);
+                let rawResponse = await codegenieAPI.generate(textBeforeCursor);
                 let cleanedResponse = removeQueryFromResponse(rawResponse, textBeforeCursor);
                 let aiResponse = extractOnlyCode(cleanedResponse);
 
