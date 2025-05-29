@@ -6,7 +6,7 @@ export class CodeGenieViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "codegenieView";
   public _view?: vscode.WebviewView;
 
-  constructor(private readonly context: vscode.ExtensionContext) {}
+  constructor(private readonly context: vscode.ExtensionContext) { }
 
   resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -55,19 +55,16 @@ export class CodeGenieViewProvider implements vscode.WebviewViewProvider {
       console.error("❌ Failed to load Webview:", error);
       webviewView.webview.html = `<h1>Error loading UI</h1><p>${error.message}</p>`;
     }
-
-    webviewView.webview.onDidReceiveMessage(async (message) => {
-      if (message.type === "insertCode") {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-          vscode.window.showErrorMessage("No active editor to insert code.");
-          return;
-        }
-        await editor.edit(editBuilder => {
-          editBuilder.insert(editor.selection.active, message.code);
-        });
-        vscode.window.showInformationMessage("✅ Code inserted from CodeGenie!");
-      }
-    });
+    
+    // Handle messages from webview here
+    // webviewView.webview.onDidReceiveMessage(async (message) => {
+    // });
+  }
+  public postMessage(message: any) {
+    if (this._view) {
+      this._view.webview.postMessage(message);
+    } else {
+      vscode.window.showErrorMessage("CodeGenie panel is not visible.");
+    }
   }
 }

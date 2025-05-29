@@ -3,7 +3,7 @@
     "displayName": "CodeGenie",
     "description": "AI-powered coding assistant using DeepSeek Coder.",
     "version": "1.0.0",
-    "publisher": "Mahesh/KC",
+    "publisher": "G-336",
     "engines": {
         "vscode": "^1.75.0"
     },
@@ -45,12 +45,100 @@
                 "title": "CodeGenie: Generate from Last Comment"
             },
             {
-                "command": "codegenie.enableAutocomplete",
-                "title": "CodeGenie: Enable Autocomplete"
+                "command": "codegenie.triggerInlineCompletion",
+                "title": "CodeGenie: Trigger Inline Completion"
             },
             {
-                "command": "codegenie.disableAutocomplete",
-                "title": "CodeGenie: Disable Autocomplete"
+                "command": "codegenie.debugSelectedCode",
+                "title": "CodeGenie: Debug Selected Code"
+            },
+            {
+                "command": "codegenie.explainCode",
+                "title": "CodeGenie: Explain Code"
+            },
+            {
+                "command": "codegenie.improveCode",
+                "title": "CodeGenie: Improve Code"
+            },
+            {
+                "command": "codegenie.enable",
+                "title": "CodeGenie: EnableinVSCode"
+            },
+            {
+                "command": "codegenie.disable",
+                "title": "CodeGenie: DisableinVSCode"
+            }
+        ],
+        "menus": {
+            "editor/context": [
+                {
+                    "command": "codegenie.getCode",
+                    "when": "!editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.explainCode",
+                    "when": "editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.improveCode",
+                    "when": "editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.debugSelectedCode",
+                    "when": "editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.generateFromComment",
+                    "when": "!editorHasSelection",
+                    "group": "@2_codegenie"
+                },
+                {
+                    "command": "codegenie.triggerInlineCompletion",
+                    "when": "!editorHasSelection",
+                    "group": "@2_codegenie"
+                }
+            ]
+        },
+        "keybindings": [
+            {
+                "command": "codegenie.getCode",
+                "key": "ctrl+g ctrl+c",
+                "mac": "cmd+g cmd+c",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.triggerInlineCompletion",
+                "key": "ctrl+t ctrl+i",
+                "mac": "cmd+t cmd+i",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.generateFromComment",
+                "key": "ctrl+alt+,",
+                "mac": "cmd+alt+,",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.debugSelectedCode",
+                "key": "alt+s",
+                "mac": "alt+s",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.enable",
+                "key": "ctrl+alt+e",
+                "mac": "cmd+alt+e",
+                "when": "editorTextFocus"
+            },
+            {
+                "command": "codegenie.disable",
+                "key": "ctrl+alt+d",
+                "mac": "cmd+alt+d",
+                "when": "editorTextFocus"
             }
         ]
     },

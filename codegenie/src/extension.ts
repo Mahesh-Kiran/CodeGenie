@@ -1,12 +1,12 @@
 import * as vscode from 'vscode';
 import { CodeGenieViewProvider } from "./CodeGenieViewProvider";
-import { fetchAICompletion } from "./codegenie-ui/src/api";
+import { codegenieAPI } from './codegenie-ui/src/api';
 
-const API_URL = "http://127.0.0.1:8000/generate";
+const debugOutputChannel = vscode.window.createOutputChannel("CodeGenie Debug");
 let EXTENSION_STATUS = true;
+let inlineSuggestionRequested = false;
 let statusBarItem: vscode.StatusBarItem;
 let provider: CodeGenieViewProvider;
-
 export function activate(context: vscode.ExtensionContext) {
     console.log("✅ CodeGenie Extension Activated!");
 
@@ -31,19 +31,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
         return cleaned;
     }
-
     function extractOnlyCode(response: string): string {
-        let cleaned = response
-            .split('\n')
-            .map(line => line.trim())
-            .filter(line => line !== '.' && line !== '')
-            .join('\n')
-            .trim();
-
-        const codeBlocks = [];
-        const codeBlockRegex = /``````/g;
+        // Extract code blocks if presentu
+        const codeBlockRegex = /```(?:[\w]*)\n([\s\S]*?)```/g;
         let match;
-        while ((match = codeBlockRegex.exec(cleaned)) !== null) {
+        const codeBlocks = [];
+
+        while ((match = codeBlockRegex.exec(response)) !== null) {
             codeBlocks.push(match[1].trim());
         }
 
@@ -51,8 +45,10 @@ export function activate(context: vscode.ExtensionContext) {
             return codeBlocks.join('\n\n');
         }
 
-        return cleaned
+        // Fallback: simple filtering
+        return response
             .split('\n')
+            .map(line => line.trim())
             .filter(line =>
                 line &&
                 !line.startsWith('#') &&
@@ -64,12 +60,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
 
+
     async function generateCodeFromPrompt(editor: vscode.TextEditor, prompt: string) {
         vscode.window.showInformationMessage("✨ Generating Code...");
         statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
 
         try {
-            const rawResponse = await fetchAICompletion(prompt, API_URL, 1000);
+            const rawResponse = await codegenieAPI.generate(prompt);
             const cleanedResponse = removeQueryFromResponse(rawResponse, prompt);
             const aiResponse = extractOnlyCode(cleanedResponse);
 
@@ -84,14 +81,6 @@ export function activate(context: vscode.ExtensionContext) {
                 editBuilder.insert(editor.selection.active, `\n${aiResponse.trim()}\n`);
             });
 
-            // Send full explanation + code to Webview
-            if (provider && provider._view) {
-                provider._view.webview.postMessage({
-                    type: "aiResponse",
-                    content: rawResponse
-                });
-            }
-
             vscode.window.showInformationMessage("✅ Code inserted!");
             updateStatusBar();
         } catch (error) {
@@ -101,12 +90,26 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     function findLastComment(document: vscode.TextDocument): string | null {
+        const languageId = document.languageId;
+
+        const commentPatterns: Record<string, RegExp> = {
+            'python': /^\s*#(.*)/,
+            'javascript': /^\s*\/\/(.*)/,
+            'typescript': /^\s*\/\/(.*)/,
+            'cpp': /^\s*\/\/(.*)/,
+            'c': /^\s*\/\/(.*)/,
+            'html': /^\s*<!--(.*)-->/
+        };
+
+        const pattern = commentPatterns[languageId];
+        if (!pattern) return null;
+
         for (let i = document.lineCount - 1; i >= 0; i--) {
-            const text = document.lineAt(i).text.trim();
-            if (text.startsWith("//") || text.startsWith("#")) {
-                return text.replace(/^[/#]+/, "").trim();
-            }
+            const text = document.lineAt(i).text;
+            const match = text.match(pattern);
+            if (match) return match[1].trim();
         }
+
         return null;
     }
 
@@ -117,7 +120,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Commands
     let generateCode = vscode.commands.registerCommand('codegenie.getCode', async () => {
         if (!EXTENSION_STATUS) {
-            vscode.window.showErrorMessage("Autocomplete is disabled.");
+            vscode.window.showErrorMessage("Codegenie is disabled.");
             return;
         }
 
@@ -135,7 +138,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     let generateFromComment = vscode.commands.registerCommand('codegenie.generateFromComment', async () => {
         if (!EXTENSION_STATUS) {
-            vscode.window.showErrorMessage("Autocomplete is disabled.");
+            vscode.window.showErrorMessage("Codegenie is disabled.");
             return;
         }
 
@@ -154,19 +157,128 @@ export function activate(context: vscode.ExtensionContext) {
         await generateCodeFromPrompt(editor, lastComment);
     });
 
-    let enableAutocomplete = vscode.commands.registerCommand('codegenie.enableAutocomplete', () => {
+    let enable = vscode.commands.registerCommand('codegenie.enable', () => {
         EXTENSION_STATUS = true;
-        vscode.window.showInformationMessage("✅ CodeGenie Autocomplete Enabled");
+        vscode.window.showInformationMessage("✅ CodeGenie Enabled");
         updateStatusBar();
     });
 
-    let disableAutocomplete = vscode.commands.registerCommand('codegenie.disableAutocomplete', () => {
+    let disable = vscode.commands.registerCommand('codegenie.disable', () => {
         EXTENSION_STATUS = false;
-        vscode.window.showWarningMessage("CodeGenie Autocomplete Disabled");
+        vscode.window.showWarningMessage("CodeGenie Disabled");
         updateStatusBar();
     });
 
-    context.subscriptions.push(generateCode, generateFromComment, enableAutocomplete, disableAutocomplete);
+    let triggerInlineCompletion = vscode.commands.registerCommand('codegenie.triggerInlineCompletion', async () => {
+        inlineSuggestionRequested = true;
+        await vscode.commands.executeCommand('editor.action.inlineSuggest.trigger');
+    });
+
+    let debugSelectedCode = vscode.commands.registerCommand('codegenie.debugSelectedCode', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!EXTENSION_STATUS) {
+            vscode.window.showErrorMessage("CodeGenie is disabled.");
+            return;
+        }
+        if (!editor) {
+            vscode.window.showErrorMessage('Open a file to use CodeGenie.');
+            return;
+        }
+        const selection = editor.selection;
+        const code = editor.document.getText(selection);
+        if (!code.trim()) {
+            vscode.window.showWarningMessage('Please select some code to debug.');
+            return;
+        }
+        statusBarItem.text = "$(sync~spin) CodeGenie: Debugging...";
+
+        try {
+            const result = await codegenieAPI.debug(code); 
+            debugOutputChannel.clear();
+            if (result) {
+                vscode.window.showInformationMessage(result);
+                debugOutputChannel.appendLine(result);
+                debugOutputChannel.show(true);
+                statusBarItem.text = "$(check) CodeGenie: Ready";
+            } else {
+                debugOutputChannel.appendLine("No debug info received.");
+                debugOutputChannel.show(true);
+                statusBarItem.text = "$(alert) CodeGenie: No response";
+            }
+        } catch (error) {
+            debugOutputChannel.appendLine(`Error debugging code: ${error instanceof Error ? error.message : String(error)}`);
+            debugOutputChannel.show(true);
+            statusBarItem.text = "$(error) CodeGenie: Error";
+        }
+    });
+
+    let explainSelectedCode = vscode.commands.registerCommand('codegenie.explainCode', async () => {
+        const editor = vscode.window.activeTextEditor;
+        if (!EXTENSION_STATUS) {
+            vscode.window.showErrorMessage("CodeGenie is disabled.");
+            return;
+        }
+        if (!editor) {
+            vscode.window.showErrorMessage('Open a file to use CodeGenie.');
+            return;
+        }
+        const selection = editor.selection;
+        const code = editor.document.getText(selection);
+        if (!code.trim()) {
+            vscode.window.showWarningMessage('Please select some code to explain.');
+            return;
+        }
+
+        // Optionally reveal or focus the CodeGenie view container
+        await vscode.commands.executeCommand('workbench.view.extension.codegenieViewContainer');
+
+        // Send the selected code to the webview via provider
+        provider.postMessage({
+            type: 'explainCode',
+            code: code
+        });
+    });
+
+    let improveSelectedCode = vscode.commands.registerCommand('codegenie.improveCode', async () => {
+        if (!EXTENSION_STATUS) {
+            vscode.window.showErrorMessage("CodeGenie is disabled.");
+            return;
+        }
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage('Open a file to use CodeGenie.');
+            return;
+        }
+        const selection = editor.selection;
+        const code = editor.document.getText(selection);
+        if (!code.trim()) {
+            vscode.window.showWarningMessage('Please select some code to improve.');
+            return;
+        }
+        statusBarItem.text = "$(sync~spin) CodeGenie: Improving...";
+        try {
+            // Use the centralized API
+            const improved = await codegenieAPI.improve(code);
+
+            if (!improved || improved.trim() === code.trim()) {
+                vscode.window.showInformationMessage('No improvements suggested.');
+                statusBarItem.text = "$(check) CodeGenie: Ready";
+                return;
+            }
+
+            debugOutputChannel.clear();
+            debugOutputChannel.appendLine("---- Improved Code ----\n" + improved);
+            debugOutputChannel.show(true);
+            vscode.window.showInformationMessage('Improved code displayed in Output Console.');
+
+            statusBarItem.text = "$(check) CodeGenie: Ready";
+        } catch (error) {
+            vscode.window.showErrorMessage(`Error improving code: ${error instanceof Error ? error.message : String(error)}`);
+            statusBarItem.text = "$(error) CodeGenie: Error";
+        }
+    });
+
+    context.subscriptions.push(generateCode, generateFromComment, triggerInlineCompletion, explainSelectedCode, improveSelectedCode, debugSelectedCode, enable, disable);
 
     const inlineProvider: vscode.InlineCompletionItemProvider = {
         provideInlineCompletionItems: async (
@@ -176,7 +288,9 @@ export function activate(context: vscode.ExtensionContext) {
             token: vscode.CancellationToken
         ): Promise<vscode.InlineCompletionItem[]> => {
             if (!EXTENSION_STATUS) return [];
+            if (!inlineSuggestionRequested) return [];
 
+            inlineSuggestionRequested = false;
             let textBeforeCursor = document.getText(new vscode.Range(position.with(undefined, 0), position)).trim();
             if (!textBeforeCursor) {
                 for (let line = position.line - 1; line >= 0; line--) {
@@ -193,9 +307,10 @@ export function activate(context: vscode.ExtensionContext) {
             try {
                 console.log("🔵 Autocomplete for:", textBeforeCursor);
                 statusBarItem.text = "$(sync~spin) CodeGenie: Generating...";
+                let rawResponse = await codegenieAPI.generate(textBeforeCursor);
+                let cleanedResponse = removeQueryFromResponse(rawResponse, textBeforeCursor);
+                let aiResponse = extractOnlyCode(cleanedResponse);
 
-                let rawResponse = await fetchAICompletion(textBeforeCursor, API_URL, 1000);
-                let aiResponse = removeQueryFromResponse(rawResponse, textBeforeCursor);
                 if (!aiResponse || aiResponse.trim() === "") {
                     statusBarItem.text = "$(alert) CodeGenie: No response";
                     return [];
