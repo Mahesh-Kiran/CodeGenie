@@ -146,6 +146,4 @@ async def debug_code(request: CodeRequest):
     return {"response": response}
 
 print("✅ FastAPI Server is ready!")
-
-# Run the FastAPI server:
 # uvicorn main:app --host 0.0.0.0 --port 8000 --reload

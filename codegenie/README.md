@@ -1,71 +1,104 @@
-# codegenie README
+#  CodeGenie - Setup
 
-This is the README for your extension "codegenie". After writing up a brief description, we recommend including the following sections.
-
-## Features
-
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
-
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+CodeGenie is a powerful, locally hosted AI coding assistant designed to enhance your development workflow with intelligent code generation, completions, and suggestions. This guide walks you through the full setup, from backend to UI, and launching the extension in VS Code.
 
 ---
 
-## Following extension guidelines
+ **Backend Setup and Dependency Installation**
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+Navigate to the `codegenie` directory and install the required backend dependencies using `pip`. This includes FastAPI, Uvicorn, Transformers, Torch, and other essential libraries for the AI model and API service.
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
+```bash
+cd codegenie
+pip install fastapi uvicorn transformers torch accelerate safetensors huggingface_hub
+```
 
-## Working with Markdown
+---
 
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
+ **Frontend Dependency Installation**
 
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
+Navigate back to the `codegenie` directory and install all necessary frontend dependencies using `npm`. First, use `npm install` to fetch and set up the packages listed in `package.json`, then use `npm ci` to ensure a clean and consistent install based on the lock file.
 
-## For more information
+```bash
+cd codegenie
+npm install
+npm ci
+```
 
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
+---
 
-**Enjoy!**
+ **Model Initialization**
+
+Navigate to the backend folder and run `main.py` to download and initialize the AI model. This script sets up the backend server using FastAPI and ensures the required model files are loaded and ready for inference.
+
+```bash
+cd backend
+python main.py
+```
+
+ This step may take a few minutes during the first run as it downloads the model from Hugging Face.
+
+---
+
+🖥 **CodeGenie UI Setup**
+
+Navigate to the `src` directory, then into the `codegenie-ui` directory and install the frontend dependencies. This UI is built with React and TypeScript, and you’ll need to run the following commands to ensure everything is properly installed and locked:
+
+```bash
+cd src
+cd codegenie-ui
+npm install
+npm ci
+```
+
+---
+
+ **Launching the CodeGenie UI**
+
+To verify that the CodeGenie UI is working correctly, run the development server using:
+
+```bash
+npm run start
+```
+
+This will start the React app and open it in your default browser (usually at `http://localhost:3000`). You should see the CodeGenie interface up and running! 🎉
+
+ Make sure your backend (`main.py`) is also running for full functionality.
+ `npm install` fetches the dependencies, and `npm ci` ensures consistency with the `package-lock.json`.
+
+---
+
+ **Connecting the Backend**
+
+After setting up the frontend, fire up the FastAPI backend to handle prompt-to-code requests from CodeGenie:
+
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+ The server started successfully at `http://0.0.0.0:8000`, and you’ll see real-time API requests being processed — a clear sign that CodeGenie is now communicating with the backend model.
+
+ The `/generate` endpoint is actively handling requests coming from the React UI!
+
+---
+
+ **Launching CodeGenie Extension in VS Code**
+
+Press `F5` in VS Code, which opens a new Extension Development Host window. This is where the CodeGenie extension boots up and becomes fully functional. From here, you can interact with it in three powerful ways:
+
+🗨️ **Chat Panel**: Ask any code-related question directly in the CodeGenie chat interface.
+
+💬 **Commented Prompt**: Write a comment in code like:
+```js
+// generate a login form in React
+```
+and let CodeGenie generate it right inside the file.
+
+🎛 **Command Palette (Ctrl + Shift + P)**:
+Access commands like:
+- CodeGenie: Generate Code
+- CodeGenie: Enable Autocomplete
+- CodeGenie: Toggle Inline Suggestions
+
+ Your AI assistant is now fully armed and ready to boost your productivity like never before!
+
