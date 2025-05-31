@@ -95,7 +95,7 @@ For full details, please review the [DeepSeek License Agreement](https://github.
 
 | **Contributors** | **Milestone 1** | **Milestone 2** |
 |------------------|------------------|------------------|
-| [Mahesh Kiran](https://github.com/Mahesh-Kiran) | [Drive](https://drive.google.com/file/d/1xfw9SunwAVXpOTAQwrsldIf_fNUCApZS/view?usp=drive_link) | [Youtube]https://youtu.be/lWarovvT_jk |
+| [Mahesh Kiran](https://github.com/Mahesh-Kiran) | [Drive](https://drive.google.com/file/d/1xfw9SunwAVXpOTAQwrsldIf_fNUCApZS/view?usp=drive_link) | [Youtube](https://youtu.be/lWarovvT_jk) |
 | [Krishna Chaitanya](https://github.com/Krishna752006) | [Drive](https://drive.google.com/file/d/1bj73JlDlgTRHQOKCWK3iCyE_lrKvhYP-/view?usp=sharing) | [Youtube](https://youtu.be/klt1-3YqaLk) |
 | [Sneha](https://github.com/sneha123-reddy) | [Drive](https://youtu.be/) | – |
 | [AASRITH CODER](https://github.com/AASRITHCODER) | [Drive](https://drive.google.com/file/d/1ZYD-4lAayVCkRBY7v4QpCB50rQpIIG5a/view?usp=drive_link) | – |
