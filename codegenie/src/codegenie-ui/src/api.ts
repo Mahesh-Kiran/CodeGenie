@@ -1,4 +1,3 @@
-// api.ts
 import axios from 'axios';
 
 const API_BASE = "http://127.0.0.1:8000"; // Single configuration point
@@ -70,7 +69,7 @@ async function apiRequest(endpoint: string, prompt: string, maxTokens: number): 
       prompt, 
       max_tokens: maxTokens 
     }, {
-      timeout: 30000 // 30-second timeout
+      timeout: 60000 // 60-second timeout
     });
 
     if (!response.data?.response?.trim()) {

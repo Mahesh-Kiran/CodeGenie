@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { CodeGenieViewProvider } from "./CodeGenieViewProvider";
 import { codegenieAPI } from './codegenie-ui/src/api';
+import languageMap from './languageMap';
 
 const debugOutputChannel = vscode.window.createOutputChannel("CodeGenie Debug");
 let EXTENSION_STATUS = true;
@@ -48,10 +49,8 @@ export function activate(context: vscode.ExtensionContext) {
         // Fallback: simple filtering
         return response
             .split('\n')
-            .map(line => line.trim())
             .filter(line =>
                 line &&
-                !line.startsWith('#') &&
                 !line.startsWith('//') &&
                 !/^(Note|This|Explanation|For example|A more efficient solution|Here is|In this|To solve)/i.test(line)
             )
@@ -130,10 +129,17 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
+        // Language detection
+        const document = editor.document;
+        const languageId = document.languageId;
+        const languageName = languageMap[languageId] || languageId;
+
         const prompt = await vscode.window.showInputBox({ prompt: 'Enter your AI prompt' });
         if (!prompt) return;
 
-        await generateCodeFromPrompt(editor, prompt);
+        const promptWithLanguage = `In ${languageName}, ${prompt}`;
+
+        await generateCodeFromPrompt(editor, promptWithLanguage);
     });
 
     let generateFromComment = vscode.commands.registerCommand('codegenie.generateFromComment', async () => {
@@ -154,8 +160,13 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.showErrorMessage("No comment found.");
             return;
         }
-        await generateCodeFromPrompt(editor, lastComment);
+        const languageId = document.languageId;
+        const languageName = languageMap[languageId] || languageId;
+
+        const prompt = `In ${languageName}, ${lastComment}`;
+        await generateCodeFromPrompt(editor, prompt);
     });
+
 
     let enable = vscode.commands.registerCommand('codegenie.enable', () => {
         EXTENSION_STATUS = true;
@@ -193,7 +204,7 @@ export function activate(context: vscode.ExtensionContext) {
         statusBarItem.text = "$(sync~spin) CodeGenie: Debugging...";
 
         try {
-            const result = await codegenieAPI.debug(code); 
+            const result = await codegenieAPI.debug(code);
             debugOutputChannel.clear();
             if (result) {
                 vscode.window.showInformationMessage(result);
@@ -257,7 +268,6 @@ export function activate(context: vscode.ExtensionContext) {
         }
         statusBarItem.text = "$(sync~spin) CodeGenie: Improving...";
         try {
-            // Use the centralized API
             const improved = await codegenieAPI.improve(code);
 
             if (!improved || improved.trim() === code.trim()) {
