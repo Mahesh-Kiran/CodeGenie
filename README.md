@@ -45,7 +45,36 @@ Here’s how CodeGenie supports developers across domains:
 - Learn programming concepts with contextual examples  
 
 ---
+## 🚀 Features
+- ⚡ **Inline Autocomplete**  
+  - Copilot-style suggestions triggered manually with `Ctrl+T Ctrl+I`.
 
+- 💬 **Prompt-based Code Generation**  
+  - Trigger via command palette or comment line prompts.
+
+- 💡 **Comment-Based Generation**  
+  - Generate code from the last comment using `codegenie.generateFromComment` or from menu.
+
+- 🧠 **Explain Code**  
+  - Select any code → Right-click → "Explain with CodeGenie".
+
+- 🛠️ **Improve Code**  
+  - Auto-optimizes and refactors selected code.
+
+- 🐞 **Debug Code**  
+  - Analyzes selected code, identifies syntax/logical errors, and returns a corrected version.
+  - 
+- 🐞 **Enable/Disable Extension in VS Code**  
+  - Enable `Ctrl+alt+E`
+  - Disable `Ctrl+alt+D`
+
+- 📎 **Multi-file Support**  
+  - Upload multiple files in WebView for context-aware generation.
+
+- 🎨 **Theme Toggle**  
+  - Switch between Dark/Light mode using the WebView button.
+
+---
 ## 📐 Architecture Diagram (DeepSeek Coder V2)
 
 <p align="center">
