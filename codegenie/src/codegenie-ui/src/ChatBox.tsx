@@ -206,7 +206,10 @@ const ChatBox = () => {
       setMessages(prev => [
         ...prev,
         {
-          text: "❌ Error: Failed to get response from AI backend. Please check your connection.",
+          text: `❌ Error: ${error instanceof Error
+              ? error.message
+              : "Failed to get response from AI backend. Please check your connection."
+            }`,
           sender: "bot"
         }
       ]);
