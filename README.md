@@ -50,10 +50,13 @@ Here’s how CodeGenie supports developers across domains:
   - Copilot-style suggestions triggered manually with `Ctrl+T Ctrl+I`.
 
 - 💬 **Prompt-based Code Generation**  
-  - Trigger via command palette or comment line prompts.
-
+  - Triggered via the command palette or editor menu.
+  - Works even when the language is **not explicitly mentioned** in the prompt.
+    
 - 💡 **Comment-Based Generation**  
-  - Generate code from the last comment using `codegenie.generateFromComment` or from menu.
+  - Triggered from the command `codegenie.generateFromComment` or context menu.
+  - Extracts the last comment in the file and generates code accordingly.
+  - **Language detection** is automatic based on the active file.
 
 - 🧠 **Explain Code**  
   - Select any code → Right-click → "Explain with CodeGenie".
@@ -63,7 +66,7 @@ Here’s how CodeGenie supports developers across domains:
 
 - 🐞 **Debug Code**  
   - Analyzes selected code, identifies syntax/logical errors, and returns a corrected version.
-  - 
+    
 - 🐞 **Enable/Disable Extension in VS Code**  
   - Enable `Ctrl+alt+E`
   - Disable `Ctrl+alt+D`
