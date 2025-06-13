@@ -3,7 +3,7 @@
     "displayName": "CodeGenie",
     "description": "AI-powered coding assistant using DeepSeek Coder.",
     "version": "1.0.0",
-    "publisher": "G-336",
+    "publisher": "Team",
     "engines": {
         "vscode": "^1.75.0"
     },
